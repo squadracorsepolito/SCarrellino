@@ -19,11 +19,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "can.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -87,14 +89,66 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN1_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  HAL_CAN_Start(&hcan1);
 
+  char msg[30];
+  char rxmsg[30];
+
+  
+  uint32_t txmailbox;
+  uint8_t dati[3] = {4, 6, 7};
+  uint8_t datirx[3];
+  uint8_t id  = 5;
+  uint8_t log;
+  CAN_TxHeaderTypeDef TxHeader;
+
+  CAN_RxHeaderTypeDef RxHeader;
+  uint32_t rxFIFO;
+
+    TxHeader.DLC = sizeof(dati);
+    TxHeader.StdId = id;
+    TxHeader.IDE = CAN_ID_STD;
+    TxHeader.RTR = CAN_RTR_DATA;
+
+//invio messaggio can
+if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, (uint8_t *)dati, &txmailbox) != HAL_OK){
+       
+        Error_Handler();
+    }
+
+// verifica invio
+while(HAL_CAN_IsTxMessagePending(&hcan1, txmailbox));
+sprintf(msg, "messaggio trasmesso \n\r");
+HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen(msg),HAL_MAX_DELAY);
+
+//  ricezione can
+while (HAL_CAN_GetRxFifoFillLevel(&hcan1, rxFIFO));
+log = HAL_CAN_GetRxFifoFillLevel(&hcan1, rxFIFO);
+HAL_UART_Transmit(&huart2, (uint8_t *)"log della rx : ", strlen(""),HAL_MAX_DELAY);
+HAL_UART_Transmit(&huart2, (uint8_t *)log, strlen(log),HAL_MAX_DELAY);
+
+
+if (HAL_CAN_GetRxMessage(&hcan1, rxFIFO, &RxHeader, datirx) != HAL_OK){
+  HAL_UART_Transmit(&huart2, (uint8_t *)"errore in ricezione CAN", strlen("errore in ricezione CAN"),HAL_MAX_DELAY);
+  Error_Handler();
+}
+
+sprintf( rxmsg, "id : %lu, dati : %d, %d ,%d\n\r", RxHeader.StdId, datirx[0], datirx[1], datirx[2]);
+HAL_UART_Transmit(&huart2, (uint8_t *)"messaggio ricevuto: ", strlen("messaggio ricevuto: "),HAL_MAX_DELAY);
+HAL_UART_Transmit(&huart2, (uint8_t *)rxmsg, strlen(rxmsg),HAL_MAX_DELAY);
+
+
+
+  
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

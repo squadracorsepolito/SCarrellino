@@ -36,6 +36,7 @@ BUILD_DIR = build
 ######################################
 # C sources
 C_SOURCES =  \
+Core/Src/ECU_level_functions.c \
 Core/Src/can.c \
 Core/Src/gpio.c \
 Core/Src/main.c \
