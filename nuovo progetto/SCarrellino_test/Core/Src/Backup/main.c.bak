@@ -24,7 +24,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <stdio.h>
+#include "stdio.h"
 #include "string.h"
 /* USER CODE END Includes */
 
@@ -57,7 +57,32 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+CAN_RxHeaderTypeDef   RxHeader;
+CAN_TxHeaderTypeDef   TxHeader;
+uint32_t              txmailbox;
+uint8_t               RxData[3];
 
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1){
+          HAL_UART_Transmit(&huart2, (uint8_t *)"urrà\n\r", strlen("urrà\n\r"), HAL_MAX_DELAY);
+
+}
+
+
+/*
+void (CAN_HandleTypeDef  *hcan1)
+{
+  if (HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
+  {
+    HAL_UART_Transmit(&huart2, (uint8_t *)"errore ricezione\n\r", strlen("errore ricezione\n\r"), HAL_MAX_DELAY);
+    Error_Handler();
+  }
+  else{
+        HAL_UART_Transmit(&huart2, (uint8_t *)"messaggio ricevuto\n\r", strlen("messaggio ricevuto\n\r"), HAL_MAX_DELAY);
+
+  }
+  
+  }
+  */
 /* USER CODE END 0 */
 
 /**
@@ -76,7 +101,10 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  uint8_t dati[3] = {4, 6, 7};
+  uint8_t datirx[3];
+  uint8_t id  = 0x03;
+  uint32_t rxfifo;
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -91,54 +119,70 @@ int main(void)
   MX_CAN1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_CAN_Start(&hcan1);
 
-  char msg[30];
-  char rxmsg[30];
 
+
+
+
+// attivazione
+if(HAL_CAN_Start(&hcan1) != HAL_OK){
+    Error_Handler();
+  }
+  else( HAL_UART_Transmit(&huart2, (uint8_t *)"\n\rCAN pronta\n\r", strlen("\n\rCAN pronta\n\r"), HAL_MAX_DELAY));
+
+// attivazione interrupt Rx
+if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+  {
+    HAL_UART_Transmit(&huart2, (uint8_t *)"errore attivazione IT\n\r", strlen("errore attivazione IT\n\r"), HAL_MAX_DELAY);
+	  Error_Handler();
+  }
   
-  uint32_t txmailbox;
-  uint8_t dati[3] = {4, 6, 7};
-  uint8_t datirx[3];
-  uint8_t id  = 5;
-  uint8_t log;
-  CAN_TxHeaderTypeDef TxHeader;
 
-  CAN_RxHeaderTypeDef RxHeader;
-  uint32_t rxFIFO;
 
-    TxHeader.DLC = sizeof(dati);
-    TxHeader.StdId = id;
-    TxHeader.IDE = CAN_ID_STD;
-    TxHeader.RTR = CAN_RTR_DATA;
+TxHeader.DLC = 3;
+TxHeader.IDE = CAN_ID_STD;
+TxHeader.StdId = id;
+TxHeader.ExtId = 0;
+TxHeader.RTR = CAN_RTR_DATA;
+TxHeader.TransmitGlobalTime = DISABLE;
+
+
+
+    
+
+//while (HAL_CAN_GetState(&hcan1) != HAL_CAN_STATE_READY);
+while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 0);
+
 
 //invio messaggio can
-if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, (uint8_t *)dati, &txmailbox) != HAL_OK){
+if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, &dati[0], &txmailbox) != HAL_OK){
        
         Error_Handler();
     }
 
 // verifica invio
-while(HAL_CAN_IsTxMessagePending(&hcan1, txmailbox));
+while(HAL_CAN_IsTxMessagePending(&hcan1, txmailbox) != 0);
+char msg[30];
 sprintf(msg, "messaggio trasmesso \n\r");
 HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen(msg),HAL_MAX_DELAY);
 
-//  ricezione can
-while (HAL_CAN_GetRxFifoFillLevel(&hcan1, rxFIFO));
-log = HAL_CAN_GetRxFifoFillLevel(&hcan1, rxFIFO);
-HAL_UART_Transmit(&huart2, (uint8_t *)"log della rx : ", strlen(""),HAL_MAX_DELAY);
-HAL_UART_Transmit(&huart2, (uint8_t *)log, strlen(log),HAL_MAX_DELAY);
 
+
+
+
+//  ricezione can
+/*while (HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) == 0);
 
 if (HAL_CAN_GetRxMessage(&hcan1, rxFIFO, &RxHeader, datirx) != HAL_OK){
-  HAL_UART_Transmit(&huart2, (uint8_t *)"errore in ricezione CAN", strlen("errore in ricezione CAN"),HAL_MAX_DELAY);
+  HAL_UART_Transmit(&huart2, (uint8_t *)"errore in ricezione CAN\n\r", strlen("errore in ricezione CAN\n\r"),HAL_MAX_DELAY);
   Error_Handler();
 }
 
-sprintf( rxmsg, "id : %lu, dati : %d, %d ,%d\n\r", RxHeader.StdId, datirx[0], datirx[1], datirx[2]);
+char rxmsg[30];
+sprintf( rxmsg, "id : %lu, dati : %d, %d ,%d\n", RxHeader.StdId, datirx[0], datirx[1], datirx[2]);
 HAL_UART_Transmit(&huart2, (uint8_t *)"messaggio ricevuto: ", strlen("messaggio ricevuto: "),HAL_MAX_DELAY);
 HAL_UART_Transmit(&huart2, (uint8_t *)rxmsg, strlen(rxmsg),HAL_MAX_DELAY);
-
+*/
 
 
   
