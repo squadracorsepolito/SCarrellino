@@ -174,8 +174,8 @@ while (HAL_CAN_GetRxFifoFillLevel (&hcan1, CAN_RX_FIFO0) == 0);
 
 
 //  ricezione can
-/*while (HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) == 0);
-
+while (HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) == 0);
+/*
 if (HAL_CAN_GetRxMessage(&hcan1, rxFIFO, &RxHeader, datirx) != HAL_OK){
   HAL_UART_Transmit(&huart2, (uint8_t *)"errore in ricezione CAN\n\r", strlen("errore in ricezione CAN\n\r"),HAL_MAX_DELAY);
   Error_Handler();
