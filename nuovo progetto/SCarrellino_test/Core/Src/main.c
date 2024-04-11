@@ -60,29 +60,11 @@ void SystemClock_Config(void);
 CAN_RxHeaderTypeDef   RxHeader;
 CAN_TxHeaderTypeDef   TxHeader;
 uint32_t              txmailbox;
-uint8_t               RxData[3];
-
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1){
-          HAL_UART_Transmit(&huart2, (uint8_t *)"urrà\n\r", strlen("urrà\n\r"), HAL_MAX_DELAY);
-
-}
+uint8_t               RxData[8];
+  uint32_t rxfifo;
 
 
-/*
-void (CAN_HandleTypeDef  *hcan1)
-{
-  if (HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
-  {
-    HAL_UART_Transmit(&huart2, (uint8_t *)"errore ricezione\n\r", strlen("errore ricezione\n\r"), HAL_MAX_DELAY);
-    Error_Handler();
-  }
-  else{
-        HAL_UART_Transmit(&huart2, (uint8_t *)"messaggio ricevuto\n\r", strlen("messaggio ricevuto\n\r"), HAL_MAX_DELAY);
 
-  }
-  
-  }
-  */
 /* USER CODE END 0 */
 
 /**
@@ -106,7 +88,7 @@ int main(void)
   uint8_t dati[3] = {4, 6, 7};
   uint8_t datirx[3];
   uint8_t id  = 0x03;
-  uint32_t rxfifo;
+
 
 
 
@@ -133,7 +115,14 @@ if(HAL_CAN_Start(&hcan1) != HAL_OK){
   else( HAL_UART_Transmit(&huart2, (uint8_t *)"\n\rCAN pronta\n\r", strlen("\n\rCAN pronta\n\r"), HAL_MAX_DELAY));
 
 // attivazione interrupt Rx
-if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+if (HAL_CAN_ActivateNotification(&hcan1, 
+    CAN_IT_RX_FIFO0_MSG_PENDING |
+    CAN_IT_ERROR_WARNING |
+    CAN_IT_ERROR_PASSIVE |
+    CAN_IT_BUSOFF |
+    CAN_IT_LAST_ERROR_CODE |
+    CAN_IT_ERROR
+  ) != HAL_OK)
   {
     HAL_UART_Transmit(&huart2, (uint8_t *)"errore attivazione IT\n\r", strlen("errore attivazione IT\n\r"), HAL_MAX_DELAY);
 	  Error_Handler();
@@ -256,7 +245,12 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *){
+  if (HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK){
+    HAL_UART_Transmit(&huart2, (uint8_t *)"errore in ricezione CAN\n\r", strlen("errore in ricezione CAN\n\r"),HAL_MAX_DELAY);
+  }
+  HAL_UART_Transmit(&huart2, (uint8_t *)"CAN ricevuto\n\r", strlen("CAN ricevuto\n\r"),HAL_MAX_DELAY);
+}
 /* USER CODE END 4 */
 
 /**
