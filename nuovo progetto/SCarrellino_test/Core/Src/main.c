@@ -61,7 +61,7 @@ CAN_RxHeaderTypeDef   RxHeader;
 CAN_TxHeaderTypeDef   TxHeader;
 uint32_t              txmailbox;
 uint8_t               RxData[8];
-  uint32_t rxfifo;
+uint32_t rxfifo;
 
 
 
@@ -86,7 +86,6 @@ int main(void)
 
   // variabili per la CAN
   uint8_t dati[3] = {4, 6, 7};
-  uint8_t datirx[3];
   uint8_t id  = 0x03;
 
 
@@ -121,7 +120,8 @@ if (HAL_CAN_ActivateNotification(&hcan1,
     CAN_IT_ERROR_PASSIVE |
     CAN_IT_BUSOFF |
     CAN_IT_LAST_ERROR_CODE |
-    CAN_IT_ERROR
+    CAN_IT_ERROR |
+    CAN_IT_TX_MAILBOX_EMPTY
   ) != HAL_OK)
   {
     HAL_UART_Transmit(&huart2, (uint8_t *)"errore attivazione IT\n\r", strlen("errore attivazione IT\n\r"), HAL_MAX_DELAY);
@@ -151,25 +151,15 @@ if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, &dati[0], &txmailbox) != HAL_OK){
         Error_Handler();
     }
 
-// verifica invio
+/* verifica invio
 while(HAL_CAN_IsTxMessagePending(&hcan1, txmailbox) != 0);
 char msg[30];
 sprintf(msg, "messaggio trasmesso \n\r");
 HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen(msg),HAL_MAX_DELAY);
+*/
 
 
-while (HAL_CAN_GetRxFifoFillLevel (&hcan1, CAN_RX_FIFO1) == 0);
-while (HAL_CAN_GetRxFifoFillLevel (&hcan1, CAN_RX_FIFO0) == 0);
-
-
-//  ricezione can
-while (HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0) == 0);
 /*
-if (HAL_CAN_GetRxMessage(&hcan1, rxFIFO, &RxHeader, datirx) != HAL_OK){
-  HAL_UART_Transmit(&huart2, (uint8_t *)"errore in ricezione CAN\n\r", strlen("errore in ricezione CAN\n\r"),HAL_MAX_DELAY);
-  Error_Handler();
-}
-
 char rxmsg[30];
 sprintf( rxmsg, "id : %lu, dati : %d, %d ,%d\n", RxHeader.StdId, datirx[0], datirx[1], datirx[2]);
 HAL_UART_Transmit(&huart2, (uint8_t *)"messaggio ricevuto: ", strlen("messaggio ricevuto: "),HAL_MAX_DELAY);
@@ -245,12 +235,7 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *){
-  if (HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK){
-    HAL_UART_Transmit(&huart2, (uint8_t *)"errore in ricezione CAN\n\r", strlen("errore in ricezione CAN\n\r"),HAL_MAX_DELAY);
-  }
-  HAL_UART_Transmit(&huart2, (uint8_t *)"CAN ricevuto\n\r", strlen("CAN ricevuto\n\r"),HAL_MAX_DELAY);
-}
+
 /* USER CODE END 4 */
 
 /**
