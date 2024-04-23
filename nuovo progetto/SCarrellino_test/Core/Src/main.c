@@ -26,6 +26,7 @@
 /* USER CODE BEGIN Includes */
 #include "stdio.h"
 #include "string.h"
+#include "mcb.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -85,7 +86,7 @@ int main(void)
   /* USER CODE BEGIN Init */
 
   // variabili per la CAN
-  uint8_t dati[3] = {4, 6, 7};
+ // uint8_t dati[3] = {4, 6, 7};
   uint8_t id  = 0x03;
 
 
@@ -107,13 +108,28 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+// parametri e costruzione della struct per l'invio con formato dcb
+uint16_t throttle_0 = 16u;
+uint16_t throttle_1 = 15u;
+uint16_t steereing = 11u;
+uint16_t straingauge = 10u;
+
+struct mcb_sens_front_1_t can_front;
+  
+  can_front.throttle_0_voltage_m_v = throttle_0;
+  can_front.throttle_1_voltage_m_v = throttle_1;
+  can_front.steering_voltage_m_v = steereing;
+  can_front.brake_straingauge_voltage_m_v = straingauge;
+
+
 // attivazione
 if(HAL_CAN_Start(&hcan1) != HAL_OK){
     Error_Handler();
   }
   else( HAL_UART_Transmit(&huart2, (uint8_t *)"\n\rCAN pronta\n\r", strlen("\n\rCAN pronta\n\r"), HAL_MAX_DELAY));
 
-// attivazione interrupt Rx
+
+ // attivazione interrupt Rx
 if (HAL_CAN_ActivateNotification(&hcan1, 
     CAN_IT_RX_FIFO0_MSG_PENDING |
     CAN_IT_ERROR_WARNING |
@@ -129,42 +145,27 @@ if (HAL_CAN_ActivateNotification(&hcan1,
   }
   
 
-
-TxHeader.DLC = 3;
+// impostazioni Tx can
+TxHeader.DLC = 4;
 TxHeader.IDE = CAN_ID_STD;
 TxHeader.StdId = id;
 TxHeader.ExtId = 0;
 TxHeader.RTR = CAN_RTR_DATA;
 TxHeader.TransmitGlobalTime = DISABLE;
 
+   
 
-
-    
-
-//while (HAL_CAN_GetState(&hcan1) != HAL_CAN_STATE_READY);
 while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 0);
 
 
 //invio messaggio can
-if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, &dati[0], &txmailbox) != HAL_OK){
+uint8_t dati;
+mcb_sens_front_1_pack(&dati, &can_front, 4);
+if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, &dati, &txmailbox) != HAL_OK){
        
         Error_Handler();
     }
 
-/* verifica invio
-while(HAL_CAN_IsTxMessagePending(&hcan1, txmailbox) != 0);
-char msg[30];
-sprintf(msg, "messaggio trasmesso \n\r");
-HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen(msg),HAL_MAX_DELAY);
-*/
-
-
-/*
-char rxmsg[30];
-sprintf( rxmsg, "id : %lu, dati : %d, %d ,%d\n", RxHeader.StdId, datirx[0], datirx[1], datirx[2]);
-HAL_UART_Transmit(&huart2, (uint8_t *)"messaggio ricevuto: ", strlen("messaggio ricevuto: "),HAL_MAX_DELAY);
-HAL_UART_Transmit(&huart2, (uint8_t *)rxmsg, strlen(rxmsg),HAL_MAX_DELAY);
-*/
 
   /* USER CODE END 2 */
 

@@ -40,6 +40,7 @@ Core/Src/ECU_level_functions.c \
 Core/Src/can.c \
 Core/Src/gpio.c \
 Core/Src/main.c \
+Core/Src/mcb.c \
 Core/Src/stm32f4xx_hal_msp.c \
 Core/Src/stm32f4xx_it.c \
 Core/Src/system_stm32f4xx.c \

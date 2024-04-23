@@ -72,6 +72,9 @@ void MX_CAN1_Init(void)
 
     HAL_CAN_ConfigFilter(&hcan1, &filtriRx);
 
+
+   
+
   /* USER CODE END CAN1_Init 2 */
 
 }
@@ -151,6 +154,8 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+//callback degli errori con relativi messaggi 
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan) {
     uint32_t e = hcan->ErrorCode;
 
@@ -205,7 +210,7 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan) {
         CAN_error_handler("Parameter Error");
 }
 
-
+//callback ricezione in fifo0
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *){
     extern CAN_RxHeaderTypeDef   RxHeader;
     extern uint8_t               RxData[8];
@@ -219,7 +224,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *){
     HAL_UART_Transmit(&huart2, (uint8_t *)rxmsg, strlen(rxmsg),HAL_MAX_DELAY);
 }
 
-
+//callback completamento Tx mailbox 0
 void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan1){
     char msg[30];
     sprintf(msg, "messaggio trasmesso \n\r");
