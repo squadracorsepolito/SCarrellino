@@ -116,10 +116,14 @@ uint16_t straingauge = 10u;
 
 struct mcb_sens_front_1_t can_front;
   
-  can_front.throttle_0_voltage_m_v = throttle_0;
-  can_front.throttle_1_voltage_m_v = throttle_1;
-  can_front.steering_voltage_m_v = steereing;
-  can_front.brake_straingauge_voltage_m_v = straingauge;
+mcb_sens_front_1_init(&can_front);
+can_front.throttle_0_voltage_m_v=mcb_sens_front_1_throttle_0_voltage_m_v_encode(throttle_0);
+can_front.throttle_1_voltage_m_v=mcb_sens_front_1_throttle_1_voltage_m_v_encode(throttle_1);
+can_front.brake_straingauge_voltage_m_v=mcb_sens_front_1_brake_straingauge_voltage_m_v_encode(straingauge);
+can_front.steering_voltage_m_v=mcb_sens_front_1_steering_voltage_m_v_encode(steereing);
+
+
+uint8_t dati;
 
 
 // attivazione
@@ -159,8 +163,7 @@ while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) == 0);
 
 
 //invio messaggio can
-uint8_t dati;
-mcb_sens_front_1_pack(&dati, &can_front, 4);
+
 if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, &dati, &txmailbox) != HAL_OK){
        
         Error_Handler();

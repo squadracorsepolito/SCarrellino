@@ -26,6 +26,8 @@
 #include "usart.h"
 #include "string.h"
 #include "stdio.h"
+#include "mcb.h"
+
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan1;
@@ -217,9 +219,10 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *){
   if (HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK){
     HAL_UART_Transmit(&huart2, (uint8_t *)"errore in ricezione CAN\n\r", strlen("errore in ricezione CAN\n\r"),HAL_MAX_DELAY);
   }
-  //HAL_UART_Transmit(&huart2, (uint8_t *)"CAN ricevuto\n\r", strlen("CAN ricevuto\n\r"),HAL_MAX_DELAY);
-    char rxmsg[30];
-    sprintf( rxmsg, "id : %lu, dati : %d, %d ,%d\n", RxHeader.StdId, RxData[0], RxData[1], RxData[2]);
+
+  
+    char rxmsg[60];
+   sprintf( rxmsg, "id : %lu, dati : %u, %u ,%u, %u\n", RxHeader.StdId, RxHeader.StdId, RxData[0], RxData[1], RxData[2]);
     HAL_UART_Transmit(&huart2, (uint8_t *)"messaggio ricevuto: ", strlen("messaggio ricevuto: "),HAL_MAX_DELAY);
     HAL_UART_Transmit(&huart2, (uint8_t *)rxmsg, strlen(rxmsg),HAL_MAX_DELAY);
 }
