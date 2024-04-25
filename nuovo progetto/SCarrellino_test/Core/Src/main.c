@@ -18,13 +18,19 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "can.h"
+#include "i2c.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "fsm.h"
+#include "scarrellino_fsm.h"
+#include "stdbool.h"
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -66,6 +72,8 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+ 
+bool start_fsm = 0;
 
   /* USER CODE END 1 */
 
@@ -88,8 +96,31 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN1_Init();
-  MX_USART2_UART_Init();
+  MX_CAN2_Init();
+  MX_I2C3_Init();
+  MX_TIM9_Init();
+  MX_USART3_UART_Init();
+  MX_TIM1_Init();
+  MX_ADC1_Init();
+  MX_TIM8_Init();
+  MX_TIM12_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+
+  //fsm
+  FSM_HandleTypeDef hfsm;
+  uint8_t n_events = 3;
+  FSM_callback_function run_callback_1;
+  FSM_callback_function transition_callback_1;
+  HAL_UART_Transmit(&huart3, (uint8_t *) "prova\n", strlen("prova\n"), HAL_MAX_DELAY);
+
+  if (FSM_SCARRELLINO_FSM_init(&hfsm, n_events, run_callback_1,transition_callback_1) != STMLIBS_OK){
+    HAL_UART_Transmit(&huart3, (uint8_t *) "errore init fsm\n", strlen("errore init fsm\n"),10);
+  }
+  if (FSM_start(&hfsm) != STMLIBS_OK){
+    HAL_UART_Transmit(&huart3, (uint8_t *) "errore start fsm\n", strlen("errore start fsm\n"),10);
+  }
+    HAL_UART_Transmit(&huart3, (uint8_t *) "prova\n", strlen("prova\n"),HAL_MAX_DELAY);
 
   /* USER CODE END 2 */
 
@@ -97,6 +128,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+  HAL_UART_Transmit(&huart3, (uint8_t *) "prova\n", strlen("prova\n"), HAL_MAX_DELAY);
+
+   FSM_routine(&hfsm);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
