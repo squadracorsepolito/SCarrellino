@@ -14,6 +14,9 @@
 
 #include "fsm.h"
 
+FSM_callback_function run_callback_1();
+FSM_callback_function transition_callback_1();
+
 enum FSM_SCARRELLINO_FSM_StateEnum {
     FSM_SCARRELLINO_FSM_IDLE = 0,
     FSM_SCARRELLINO_FSM_CHARGE = 1,

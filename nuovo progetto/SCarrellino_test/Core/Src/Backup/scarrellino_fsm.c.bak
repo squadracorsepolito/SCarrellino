@@ -8,7 +8,8 @@
  * - Filippo Rossi <filippo.rossi.sc@gmail.com>
  * - Federico Carbone <federico.carbone.sc@gmail.com>
  */
-
+#include "main.h"
+#include "adc.h"
 #include "scarrellino_fsm.h"
 
 #ifndef __weak
@@ -16,6 +17,15 @@
 #endif // __weak
 
 // Private wrapper function signatures
+
+FSM_callback_function run_callback_1(){
+return 0;
+}
+
+FSM_callback_function transition_callback_1(){
+    return 0;
+}
+
 
 uint32_t _FSM_SCARRELLINO_FSM_IDLE_event_handle(uint8_t event);
 uint32_t _FSM_SCARRELLINO_FSM_IDLE_do_work();
