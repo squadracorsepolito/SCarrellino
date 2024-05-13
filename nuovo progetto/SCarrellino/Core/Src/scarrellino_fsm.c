@@ -22,10 +22,20 @@
 #endif // __weak
 
 
+//error signals
+bool IMD_error      = 0;
+bool AMS_error      = 0;
+bool TLB_error      = 0;
+bool TS_error       = 0;
+bool BattTemp_error = 0;
+bool SDC_error      = 0;
+
+bool ChargeEN       = 0;
 
 FSM_callback_function run_callback_1(){
 
 display_routine();
+
 
     return 0;
 }
@@ -109,16 +119,25 @@ uint32_t _FSM_SCARRELLINO_FSM_IDLE_do_work() {
     
     uint32_t next;
 
-    if (HAL_GPIO_ReadPin(CH_EN_BUTTON_GPIO_IN_GPIO_Port, CH_EN_BUTTON_GPIO_IN_Pin) == 1){
-        next = FSM_SCARRELLINO_FSM_CHARGE;
-        HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 1);
+    if (ChargeEN == 1){
+        
+        if(IMD_error      == 0 &
+           AMS_error      == 0 &
+           TLB_error      == 0 &
+           TS_error       == 0 &
+           BattTemp_error == 0 &
+           SDC_error      == 0 &
+           ChargeEN       == 1 )
+           {
 
+            next = FSM_SCARRELLINO_FSM_CHARGE;
+           }
         
     }
+
     else{
         next = FSM_SCARRELLINO_FSM_IDLE;
-        HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 0);
-
+        
     }
 
     switch (next) {
@@ -143,20 +162,31 @@ uint32_t _FSM_SCARRELLINO_FSM_CHARGE_event_handle(uint8_t event) {
     }
 }
 
+
+void FSM_SCARRELLINO_FSM_CHARGE_entry() {
+    ChargeBlueLedOn();
+    HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 1);
+}
+
+
 /** @brief wrapper of FSM_SCARRELLINO_FSM_do_work, with exit state checking */
 uint32_t _FSM_SCARRELLINO_FSM_CHARGE_do_work() {
     uint32_t next;
 
-    if (HAL_GPIO_ReadPin(CH_EN_BUTTON_GPIO_IN_GPIO_Port, CH_EN_BUTTON_GPIO_IN_Pin) == 1){
-        next = FSM_SCARRELLINO_FSM_CHARGE;
-        HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 1);
+        if(IMD_error      == 0 &
+           AMS_error      == 0 &
+           TLB_error      == 0 &
+           TS_error       == 0 &
+           BattTemp_error == 0 &
+           SDC_error      == 0 &
+           ChargeEN       == 1 )
+           {
 
-        
-    }
+        next = FSM_SCARRELLINO_FSM_CHARGE;
+           }
 
     else{
         next = FSM_SCARRELLINO_FSM_STOP_CHARGE;
-                HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 0);
 
     }
 
@@ -168,6 +198,8 @@ uint32_t _FSM_SCARRELLINO_FSM_CHARGE_do_work() {
         return _FSM_SCARRELLINO_FSM_DIE;
     }
 }
+
+
 
 /** @brief wrapper of FSM_SCARRELLINO_FSM_event_handle, with exit state checking */
 uint32_t _FSM_SCARRELLINO_FSM_STOP_CHARGE_event_handle(uint8_t event) {
@@ -184,6 +216,10 @@ uint32_t _FSM_SCARRELLINO_FSM_STOP_CHARGE_event_handle(uint8_t event) {
 
 /** @brief wrapper of FSM_SCARRELLINO_FSM_do_work, with exit state checking */
 uint32_t _FSM_SCARRELLINO_FSM_STOP_CHARGE_do_work() {
+    
+    ChargeBlueLedOff();
+    HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 0);
+
     uint32_t next = FSM_SCARRELLINO_FSM_DONE;
 
     switch (next) {

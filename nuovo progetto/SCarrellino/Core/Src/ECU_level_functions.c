@@ -53,6 +53,17 @@ if(ADC_conv_flag == 1){
 }
 }
 
+void ChargeBlueLedOn(void){
+    HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 1);
+
+}
+
+void ChargeBlueLedOff(void){
+    HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 0);
+
+}
+
+
 //#ifdef __CAN_H__
 
 

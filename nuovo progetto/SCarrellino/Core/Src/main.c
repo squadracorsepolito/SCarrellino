@@ -54,6 +54,8 @@ volatile uint8_t ntc_temp;
 volatile char ntc_temp_buffer[20];
 FSM_HandleTypeDef hfsm;
 
+uint8_t error_code;
+
 
 /* USER CODE END PD */
 
@@ -131,11 +133,11 @@ int main(void)
   uint8_t n_events = 0;
  
   if (FSM_SCARRELLINO_FSM_init(&hfsm, n_events, run_callback_1, transition_callback_1) != STMLIBS_OK){
-    HAL_UART_Transmit(&LOG_UART, (uint8_t *) "errore init fsm\n", strlen("errore init fsm\n"),10);
+    error_code = init_fsm_error;
     Error_Handler();
   }
   if (FSM_start(&hfsm) != STMLIBS_OK){
-    HAL_UART_Transmit(&LOG_UART, (uint8_t *) "errore start fsm\n", strlen("errore start fsm\n"),10);
+    error_code = fsm_start_error;
     Error_Handler();
   }
     HAL_UART_Transmit(&LOG_UART, (uint8_t *) "tutto ok\n", strlen("tutto ok\n"),10);
@@ -212,6 +214,7 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
+
 /* USER CODE END 4 */
 
 /**
@@ -222,7 +225,23 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
+    __disable_irq();
+
+ char error_buffer[40] = "";
+
+  switch (error_code)
+  {
+  case 0:
+    strcpy(error_buffer, "init fsm error");
+    break;
+  
+  case 1:
+    strcpy(error_buffer, "start fsm error");
+    break;
+  }
+
+  HAL_UART_Transmit(&LOG_UART, (uint8_t *) &error_buffer, strlen(error_buffer),10);
+
   while (1)
   {
   }
