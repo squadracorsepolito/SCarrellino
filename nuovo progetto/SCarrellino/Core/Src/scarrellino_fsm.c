@@ -263,7 +263,7 @@ uint32_t _FSM_SCARRELLINO_FSM_DONE_do_work() {
     switch (next) {
     case FSM_SCARRELLINO_FSM_DONE:
     case FSM_SCARRELLINO_FSM_IDLE:
-        return next;
+            return next;
     default:
         return _FSM_SCARRELLINO_FSM_DIE;
     }
@@ -298,9 +298,9 @@ __weak FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_CHARGE_event_handle(
 }
 
 /** @attention this function is a stub and as such is declared as weak. */
-__weak void FSM_SCARRELLINO_FSM_CHARGE_entry() {
-    return;
-}
+//__weak void FSM_SCARRELLINO_FSM_CHARGE_entry() {
+  //  return;
+//}
 
 /** @attention this function is a stub and as such is declared as weak. */
 __weak FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_CHARGE_do_work() {

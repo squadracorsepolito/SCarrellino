@@ -42,12 +42,14 @@ Core/Src/I2C_LCD_cfg.c \
 Core/Src/Util.c \
 Core/Src/adc.c \
 Core/Src/can.c \
+Core/Src/can_functions.c \
 Core/Src/dma.c \
 Core/Src/fsm.c \
 Core/Src/gpio.c \
 Core/Src/i2c.c \
 Core/Src/interrupt.c \
 Core/Src/main.c \
+Core/Src/mcb.c \
 Core/Src/ntc.c \
 Core/Src/scarrellino_fsm.c \
 Core/Src/stm32f4xx_hal_msp.c \

@@ -34,6 +34,9 @@
 #include "string.h"
 #include "I2C_LCD.h"
 #include "ntc.h"
+#include "mcb.h"
+#include "can_functions.h"
+
 
 /* USER CODE END Includes */
 
@@ -57,6 +60,17 @@ FSM_HandleTypeDef hfsm;
 uint8_t error_code;
 
 
+CAN_RxHeaderTypeDef   RxHeader;
+CAN_TxHeaderTypeDef   TxHeader;
+uint32_t              txmailbox;
+uint8_t         RxData[8];
+uint32_t              rxfifo;
+
+
+uint8_t tlb_battery_shut_buffer;
+uint8_t tlb_battery_tsal_buffer;
+uint8_t tlb_battery_shut_id  = 0b0;
+uint8_t tlb_battery_tsal_id  = 0b1;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -127,6 +141,92 @@ int main(void)
 
   HAL_TIM_PWM_Start(&htim3 ,TIM_CHANNEL_4);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *) &ntc_value, 1);
+
+
+
+
+
+double pre_ams_imd = 0;
+double post_ams_latch = 0;
+double post_ams_imd = 0;
+double pre_tlb_batt = 0;
+double ams_error_latch = 0;
+double imd_error_latch = 0;
+double sd_prch_rly = 0;
+
+double tsal_green = 1;
+double air_pos_closed = 1;
+double air_neg_closed = 1;
+double relay_precharge_closed = 1;
+double dc_bus_over60 = 0;
+double air_pos_intentional = 1;
+double air_neg_intentional = 1;
+double intentional_state_relay_precharge = 1;
+double short2_gnd_air_pos = 0;
+double short2_gnd_air_neg = 0;
+double is_any_short2_gnd_present = 0;
+double is_any_imp_present = 0;
+double is_air_pos_imp_present = 0;
+
+
+
+struct mcb_tlb_battery_shut_status_t tlb_shut;
+struct mcb_tlb_battery_tsal_status_t tlb_tsal;
+struct mcb_sens_front_1_t can_front;
+
+
+//mcb_tlb_battery_shut packing
+mcb_tlb_battery_shut_status_init(&tlb_shut);
+
+tlb_shut.is_shut_closed_pre_ams_imd_latch = mcb_tlb_battery_shut_status_is_shut_closed_pre_ams_imd_latch_encode(pre_ams_imd);
+tlb_shut.is_shut_closed_post_ams_latch = mcb_tlb_battery_shut_status_is_shut_closed_post_ams_latch_encode(post_ams_latch);
+tlb_shut.is_shut_closed_post_imd_latch = mcb_tlb_battery_shut_status_is_shut_closed_post_imd_latch_encode(post_ams_imd);
+tlb_shut.is_shutdown_closed_pre_tlb_batt_final = mcb_tlb_battery_shut_status_is_shutdown_closed_pre_tlb_batt_final_encode(pre_tlb_batt);
+tlb_shut.is_ams_error_latched = mcb_tlb_battery_shut_status_is_ams_error_latched_encode(ams_error_latch);
+tlb_shut.is_imd_error_latched = mcb_tlb_battery_shut_status_is_imd_error_latched_encode(imd_error_latch);
+tlb_shut.is_sd_prch_rly_closed = mcb_tlb_battery_shut_status_is_sd_prch_rly_closed_encode(sd_prch_rly);
+
+mcb_tlb_battery_shut_status_pack(&tlb_battery_shut_buffer, &tlb_shut, sizeof(tlb_shut));
+
+// attivazione
+if(HAL_CAN_Start(&hcan1) != HAL_OK){
+    Error_Handler();
+  }
+  else( HAL_UART_Transmit(&huart2, (uint8_t *)"\n\rCAN pronta\n\r", strlen("\n\rCAN pronta\n\r"), HAL_MAX_DELAY));
+
+
+ // attivazione interrupt Rx
+if (HAL_CAN_ActivateNotification(&hcan1, 
+    CAN_IT_RX_FIFO0_MSG_PENDING |
+    CAN_IT_ERROR_WARNING |
+    CAN_IT_ERROR_PASSIVE |
+    CAN_IT_BUSOFF |
+    CAN_IT_LAST_ERROR_CODE |
+    CAN_IT_ERROR |
+    CAN_IT_TX_MAILBOX_EMPTY
+  ) != HAL_OK)
+  {
+    HAL_UART_Transmit(&huart2, (uint8_t *)"errore attivazione IT\n\r", strlen("errore attivazione IT\n\r"), HAL_MAX_DELAY);
+	  Error_Handler();
+  }
+  
+
+// impostazioni e Tx can
+TxHeader.DLC = 1;
+TxHeader.IDE = CAN_ID_STD;
+TxHeader.StdId = tlb_battery_shut_id;
+TxHeader.ExtId = 0;
+TxHeader.RTR = CAN_RTR_DATA;
+TxHeader.TransmitGlobalTime = DISABLE;
+
+can_send(&hcan1, &tlb_battery_shut_buffer, &TxHeader, CAN_RX_FIFO0);
+
+
+
+
+
+
+
 
 
 //fsm
