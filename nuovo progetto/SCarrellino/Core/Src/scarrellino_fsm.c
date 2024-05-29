@@ -16,6 +16,7 @@
 #include "string.h"
 #include "stdbool.h"
 #include "ECU_level_functions.h"
+#include "can_functions.h"
 
 #ifndef __weak
 #define __weak __attribute__((weak))
@@ -23,18 +24,21 @@
 
 
 //error signals
-bool IMD_error      = 0;
-bool AMS_error      = 0;
-bool TLB_error      = 0;
-bool TS_error       = 0;
-bool BattTemp_error = 0;
-bool SDC_error      = 0;
+uint8_t volatile pre_ams_imd_error ;
+uint8_t post_ams_latch_error;
+uint8_t post_ams_imd_error ;
+uint8_t sdc_closed_pre_tlb_batt_error;
+uint8_t ams_error_latch_error ;
+uint8_t imd_error_latch_error ;
+uint8_t sdc_prch_rly_error ;
 
-bool ChargeEN       = 0;
+ #define ChargeEN HAL_GPIO_ReadPin(CH_EN_BUTTON_GPIO_IN_GPIO_Port, CH_EN_BUTTON_GPIO_IN_Pin) 
 
+         
 FSM_callback_function run_callback_1(){
 
 display_routine();
+
 
 
     return 0;
@@ -117,17 +121,20 @@ uint32_t _FSM_SCARRELLINO_FSM_IDLE_event_handle(uint8_t event) {
 /** @brief wrapper of FSM_SCARRELLINO_FSM_do_work, with exit state checking */
 uint32_t _FSM_SCARRELLINO_FSM_IDLE_do_work() {
     
+    can_rx_routine();
+
     uint32_t next;
 
     if (ChargeEN == 1){
         
-        if(IMD_error      == 0 &
-           AMS_error      == 0 &
-           TLB_error      == 0 &
-           TS_error       == 0 &
-           BattTemp_error == 0 &
-           SDC_error      == 0 &
-           ChargeEN       == 1 )
+        if( pre_ams_imd_error                == 1 &
+            post_ams_latch_error             == 0 &
+            sdc_closed_pre_tlb_batt_error    == 0 &
+            post_ams_imd_error               == 0 &
+            ams_error_latch_error            == 0 &
+            imd_error_latch_error            == 0 &
+            sdc_prch_rly_error               == 1 &
+            ChargeEN                         == 1 )
            {
 
             next = FSM_SCARRELLINO_FSM_CHARGE;
@@ -173,13 +180,14 @@ void FSM_SCARRELLINO_FSM_CHARGE_entry() {
 uint32_t _FSM_SCARRELLINO_FSM_CHARGE_do_work() {
     uint32_t next;
 
-        if(IMD_error      == 0 &
-           AMS_error      == 0 &
-           TLB_error      == 0 &
-           TS_error       == 0 &
-           BattTemp_error == 0 &
-           SDC_error      == 0 &
-           ChargeEN       == 1 )
+        if( pre_ams_imd_error                == 1 &
+            post_ams_latch_error             == 0 &
+            sdc_closed_pre_tlb_batt_error    == 0 &
+            post_ams_imd_error               == 0 &
+            ams_error_latch_error            == 0 &
+            imd_error_latch_error            == 0 &
+            sdc_prch_rly_error               == 1 &
+            ChargeEN                         == 1 )
            {
 
         next = FSM_SCARRELLINO_FSM_CHARGE;

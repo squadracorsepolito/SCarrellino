@@ -16,6 +16,9 @@
 #include "stdio.h"
 #include "string.h"
 
+extern uint8_t raw;                                                             //aggiunto da me
+
+
 /*-----------------------[INTERNAL DEFINITIONS]-----------------------*/
 // CMD
 #define LCD_CLEARDISPLAY        0x01
@@ -143,13 +146,13 @@ void I2C_LCD_Clear(uint8_t I2C_LCD_InstanceIndex)
 
 void I2C_LCD_Home(uint8_t I2C_LCD_InstanceIndex)
 {
+    raw = 0u;
     I2C_LCD_Cmd(I2C_LCD_InstanceIndex, LCD_RETURNHOME);
     DELAY_MS(2);
 }
 
 void I2C_LCD_SetCursor(uint8_t I2C_LCD_InstanceIndex, uint8_t Col, uint8_t Row)
 {
-    extern uint8_t raw;                                                             //aggiunto da me
     raw = Row;                                                                      //aggiunto da me
 
     int Row_Offsets[] = {0x00, 0x40, 0x14, 0x54};
@@ -256,7 +259,6 @@ void I2C_LCD_PrintCustomChar(uint8_t I2C_LCD_InstanceIndex, uint8_t CharIndex)
 
 
 void I2C_LCD_ACapo(uint8_t I2C_LCD_InstanceIndex){
-    extern uint8_t raw;
     raw ++;
     I2C_LCD_SetCursor(I2C_LCD_InstanceIndex, 0, raw);
 }

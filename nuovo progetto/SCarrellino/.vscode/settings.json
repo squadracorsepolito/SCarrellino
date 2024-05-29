@@ -8,5 +8,6 @@
         "main.h": "c",
         "i2c_lcd.h": "c",
         "scarrellino_fsm.h": "c"
-    }
+    },
+    "cortex-debug.variableUseNaturalFormat": true
 }

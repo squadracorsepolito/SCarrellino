@@ -95,8 +95,15 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN Private defines */
 #define LOG_UART huart2
+
 #define init_fsm_error 0
 #define fsm_start_error 1
+#define CAN_start_error 2
+#define CAN_it_activation_error 3
+#define CAN_generic_error 4
+#define CAN_Rx_error 5
+
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
@@ -104,3 +111,4 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
+
