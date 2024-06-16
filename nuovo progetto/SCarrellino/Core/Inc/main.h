@@ -54,10 +54,13 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+
 //cambia da PC3 a PA2 in definitivo
+//16 = 4 positions allowed * 4 ticks every movement
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define adc_timer_value 500
 #define ENCODER_SW_GPIO_IN_Pin GPIO_PIN_13
 #define ENCODER_SW_GPIO_IN_GPIO_Port GPIOC
 #define CH_EN_CMD_GPIO_OUT_Pin GPIO_PIN_3
@@ -74,6 +77,8 @@ void Error_Handler(void);
 #define WARN_LED_GPIO_OUT_GPIO_Port GPIOA
 #define STAT3_LED_GPIO_OUT_Pin GPIO_PIN_7
 #define STAT3_LED_GPIO_OUT_GPIO_Port GPIOA
+#define ERR_LED_GPIO_OUT_Pin GPIO_PIN_4
+#define ERR_LED_GPIO_OUT_GPIO_Port GPIOC
 #define AMS_DRIVER_GPIO_OUT_Pin GPIO_PIN_5
 #define AMS_DRIVER_GPIO_OUT_GPIO_Port GPIOC
 #define IMD_DRIVER_GPIO_OUT_Pin GPIO_PIN_0
@@ -84,6 +89,12 @@ void Error_Handler(void);
 #define BUZZER_PWM_OUT_GPIO_Port GPIOB
 #define FAN_PWM_OUT_Pin GPIO_PIN_15
 #define FAN_PWM_OUT_GPIO_Port GPIOB
+#define ENCODER_CLK_GPIO_IN_Pin GPIO_PIN_6
+#define ENCODER_CLK_GPIO_IN_GPIO_Port GPIOC
+#define ENCODER_DT_GPIO_IN_Pin GPIO_PIN_7
+#define ENCODER_DT_GPIO_IN_GPIO_Port GPIOC
+#define NPX_DRIVER_PWM_OUT_Pin GPIO_PIN_11
+#define NPX_DRIVER_PWM_OUT_GPIO_Port GPIOA
 #define R_CAN1_RX_Pin GPIO_PIN_5
 #define R_CAN1_RX_GPIO_Port GPIOB
 #define R_CAN1_TX_Pin GPIO_PIN_6
@@ -102,6 +113,13 @@ void Error_Handler(void);
 #define CAN_it_activation_error 3
 #define CAN_generic_error 4
 #define CAN_Rx_error 5
+#define CAN_start_error_brusa 6
+
+ #define ChargeEN            HAL_GPIO_ReadPin(CH_EN_BUTTON_GPIO_IN_GPIO_Port, CH_EN_BUTTON_GPIO_IN_Pin) 
+ #define ChargeBlueLedOn     HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 1);
+ #define ChargeBlueLedOff    HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 0);
+ #define ChargeENcmdON       HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 1);
+ #define ChargeENcmdOFF      HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 0);
 
 
 /* USER CODE END Private defines */
@@ -111,4 +129,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-

@@ -24,15 +24,23 @@
 
 
 //error signals
-uint8_t volatile pre_ams_imd_error ;
-uint8_t post_ams_latch_error;
-uint8_t post_ams_imd_error ;
-uint8_t sdc_closed_pre_tlb_batt_error;
-uint8_t ams_error_latch_error ;
-uint8_t imd_error_latch_error ;
-uint8_t sdc_prch_rly_error ;
+uint8_t  pre_ams_imd_error ;
+uint8_t  post_ams_latch_error;
+uint8_t  post_ams_imd_error ;
+uint8_t  sdc_closed_pre_tlb_batt_error;
+uint8_t  ams_error_latch_error ;
+uint8_t  imd_error_latch_error ;
+uint8_t  sdc_prch_rly_error ;
 
- #define ChargeEN HAL_GPIO_ReadPin(CH_EN_BUTTON_GPIO_IN_GPIO_Port, CH_EN_BUTTON_GPIO_IN_Pin) 
+
+//cell info signals
+double v_max_id_rx;
+double v_min_id_rx;
+double v_max_rx;
+double v_min_rx;
+double v_mean_rx;
+
+
 
          
 FSM_callback_function run_callback_1(){
@@ -171,14 +179,17 @@ uint32_t _FSM_SCARRELLINO_FSM_CHARGE_event_handle(uint8_t event) {
 
 
 void FSM_SCARRELLINO_FSM_CHARGE_entry() {
-    ChargeBlueLedOn();
-    HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 1);
+    ChargeBlueLedOn;
+    ChargeENcmdON;
 }
 
 
 /** @brief wrapper of FSM_SCARRELLINO_FSM_do_work, with exit state checking */
 uint32_t _FSM_SCARRELLINO_FSM_CHARGE_do_work() {
     uint32_t next;
+
+    can_rx_routine();
+
 
         if( pre_ams_imd_error                == 1 &
             post_ams_latch_error             == 0 &
@@ -225,8 +236,9 @@ uint32_t _FSM_SCARRELLINO_FSM_STOP_CHARGE_event_handle(uint8_t event) {
 /** @brief wrapper of FSM_SCARRELLINO_FSM_do_work, with exit state checking */
 uint32_t _FSM_SCARRELLINO_FSM_STOP_CHARGE_do_work() {
     
-    ChargeBlueLedOff();
-    HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 0);
+    
+    ChargeBlueLedOff;
+    ChargeENcmdOFF;
 
     uint32_t next = FSM_SCARRELLINO_FSM_DONE;
 

@@ -7,7 +7,9 @@
         "adc.h": "c",
         "main.h": "c",
         "i2c_lcd.h": "c",
-        "scarrellino_fsm.h": "c"
+        "scarrellino_fsm.h": "c",
+        "i2c_lcd_cfg.h": "c",
+        "can.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": true
 }

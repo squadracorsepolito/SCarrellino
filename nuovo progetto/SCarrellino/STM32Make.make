@@ -46,10 +46,12 @@ Core/Src/can_functions.c \
 Core/Src/dma.c \
 Core/Src/fsm.c \
 Core/Src/gpio.c \
+Core/Src/hvcb.c \
 Core/Src/i2c.c \
 Core/Src/interrupt.c \
 Core/Src/main.c \
 Core/Src/mcb.c \
+Core/Src/nlg5_database_can.c \
 Core/Src/ntc.c \
 Core/Src/scarrellino_fsm.c \
 Core/Src/stm32f4xx_hal_msp.c \
@@ -191,7 +193,7 @@ LIBDIR = \
 
 
 # Additional LD Flags from config file
-ADDITIONALLDFLAGS = -Wl,--print-memory-usage -specs=nano.specs 
+ADDITIONALLDFLAGS = -Wl,--print-memory-usage -specs=nano.specs -u_printf_float 
 
 LDFLAGS = $(MCU) $(ADDITIONALLDFLAGS) -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 

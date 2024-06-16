@@ -28,6 +28,7 @@
 #include "stdio.h"
 #include "mcb.h"
 #include "main.h"
+#include "nlg5_database_can.h"
 
 
 /* USER CODE END 0 */
@@ -47,7 +48,7 @@ void MX_CAN1_Init(void)
 
   /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 10;
+  hcan1.Init.Prescaler = 20;
   hcan1.Init.Mode = CAN_MODE_LOOPBACK;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan1.Init.TimeSeg1 = CAN_BS1_15TQ;
@@ -55,7 +56,7 @@ void MX_CAN1_Init(void)
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = DISABLE;
   hcan1.Init.AutoWakeUp = DISABLE;
-  hcan1.Init.AutoRetransmission = DISABLE;
+  hcan1.Init.AutoRetransmission = ENABLE;
   hcan1.Init.ReceiveFifoLocked = DISABLE;
   hcan1.Init.TransmitFifoPriority = DISABLE;
   if (HAL_CAN_Init(&hcan1) != HAL_OK)
@@ -66,14 +67,14 @@ void MX_CAN1_Init(void)
 CAN_FilterTypeDef filtriRx;
     filtriRx.FilterActivation     = ENABLE;
     filtriRx.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-    filtriRx.FilterBank           = 10;
-    filtriRx.FilterIdHigh         = 0x03 << 5;
-    filtriRx.FilterIdLow          = 0x0;
-    filtriRx.FilterMaskIdHigh     = 0x0U;
-    filtriRx.FilterMaskIdLow      = 0x0U;
+    filtriRx.FilterBank           = 10u;
+    filtriRx.FilterIdHigh         = 0x0000;
+    filtriRx.FilterIdLow          = 0x0000;
+    filtriRx.FilterMaskIdHigh     = 0x0000;
+    filtriRx.FilterMaskIdLow      = 0x0000;
     filtriRx.FilterMode           = CAN_FILTERMODE_IDMASK;
     filtriRx.FilterScale          = CAN_FILTERSCALE_32BIT;
-    filtriRx.SlaveStartFilterBank = 13;
+    filtriRx.SlaveStartFilterBank = 13u;
 
 HAL_CAN_ConfigFilter(&hcan1, &filtriRx);
 
@@ -108,7 +109,19 @@ void MX_CAN2_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN2_Init 2 */
+  CAN_FilterTypeDef filtriRx;
+    filtriRx.FilterActivation     = ENABLE;
+    filtriRx.FilterFIFOAssignment = CAN_FILTER_FIFO1;
+    filtriRx.FilterBank           = 11u;
+    filtriRx.FilterIdHigh         = 0x0000;
+    filtriRx.FilterIdLow          = NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID;
+    filtriRx.FilterMaskIdHigh     = 0x0000;
+    filtriRx.FilterMaskIdLow      = NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID;
+    filtriRx.FilterMode           = CAN_FILTERMODE_IDLIST;
+    filtriRx.FilterScale          = CAN_FILTERSCALE_32BIT;
+    filtriRx.SlaveStartFilterBank = 12u;
 
+HAL_CAN_ConfigFilter(&hcan2, &filtriRx);
   /* USER CODE END CAN2_Init 2 */
 
 }

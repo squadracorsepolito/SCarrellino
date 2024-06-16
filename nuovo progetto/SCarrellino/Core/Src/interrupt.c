@@ -11,7 +11,9 @@
 #include "mcb.h"
 #include "string.h"
 #include "stdio.h"
-
+#include "can_functions.h"
+#include "interrupt.h"
+#include "nlg5_database_can.h"
 
 #define uart_print(X)                                         \
 do{                                                           \
@@ -22,6 +24,9 @@ extern volatile uint16_t ntc_value;
 extern volatile uint8_t ntc_temp;
 volatile bool ADC_conv_flag = 0;
 extern uint8_t error_code;
+
+
+
 
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc){
@@ -90,29 +95,78 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan) {
 
 
 
+volatile uint8_t              can_id;
+extern  CAN_RxHeaderTypeDef   RxHeader;
+extern  uint8_t               RxData[8];
+extern bool volatile          can_rx_flag;
 
+
+// 1 -> v_cell
+// 2 -> tlb_battery_shut
+can_message can_buffer[can_message_rx_number];
+can_message can_buffer_brusa;
 
 
 //callback ricezione in fifo0
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
-    extern CAN_RxHeaderTypeDef   RxHeader;
-    extern uint8_t               RxData;
-    extern bool volatile         can_rx_flag;
+    
 
-
-  if (HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &RxHeader, &RxData) != HAL_OK){
-    HAL_UART_Transmit(&LOG_UART, (uint8_t *)"errore in ricezione CAN\n\r", strlen("errore in ricezione CAN\n\r"),10);
+if (hcan->Instance == &hcan1 ){
+  if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, &RxData) != HAL_OK){
     error_code = CAN_Rx_error;
     Error_Handler();
   }
 
   else{
   
-    HAL_UART_Transmit(&huart2, (uint8_t *)"messaggio ricevuto: \n\r", strlen("messaggio ricevuto: \n\r"),10);
     can_rx_flag = 1;
+    
+    if(RxHeader.StdId == v_cell_id) {
+        can_buffer[0].id = v_cell_id;
+        for (uint8_t i = 0; i < 9; i++) can_buffer[0].data[i] = RxData[i];
+        can_buffer[0].data_present = 1;
+    }
+
+    else if(RxHeader.StdId == tlb_battery_shut_id){
+        can_buffer[1].id = tlb_battery_shut_id;
+        for (uint8_t i = 0; i < 9; i++) can_buffer[1].data[i] = RxData[i];
+        can_buffer[1].data_present = 1;
+        
+  }
+
+}
+  }
+
+
+
+
+
+
+  if (hcan->Instance == &hcan2){
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &RxHeader, &RxData) != HAL_OK){
+        error_code = CAN_Rx_error;
+        Error_Handler();
+    }
+
+    else{
+            
+        can_rx_flag = 1;
+
+        if(RxHeader.StdId == NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID) {
+
+            can_buffer_brusa.id = NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID;
+            for (uint8_t i = 0; i < 9; i++) can_buffer_brusa.data[i] = RxData[i];
+            can_buffer_brusa.data_present = 1;
+
+    }
 
   }
+  
 }
+}
+
+
+  
 
 
 
@@ -127,4 +181,47 @@ void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan){
     char msg[30];
     sprintf(msg, "\rmessaggio trasmesso \n\r");
     HAL_UART_Transmit(&LOG_UART, (uint8_t *)&msg, strlen(msg),10);
+}
+
+
+
+
+//value of the timer
+uint16_t  volatile counter = 0;
+
+//value of the timer with sign
+int16_t volatile count = 0;
+
+//real value of the position of the rotary encoder
+int16_t volatile position = 0;
+
+uint8_t number_of_positions = 2;
+
+
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){
+
+    if (htim->Instance == TIM3){
+
+        counter = __HAL_TIM_GetCounter(htim);
+        count = (int16_t)counter;
+
+        // every rotation the timer encreases of 4 
+        position = count/4;
+
+    }
+}
+
+
+
+
+
+
+
+
+uint16_t volatile tim4_count = adc_timer_value;
+
+void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef * htim){
+    tim4_count += adc_timer_value;
+    __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4,tim4_count);
 }

@@ -54,7 +54,7 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, CH_EN_CMD_GPIO_OUT_Pin|GPIO_PIN_4|AMS_DRIVER_GPIO_OUT_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, CH_EN_CMD_GPIO_OUT_Pin|ERR_LED_GPIO_OUT_Pin|AMS_DRIVER_GPIO_OUT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, STAT2_LED_GPIO_OUT_Pin|STAT1_LED_GPIO_OUT_Pin|WARN_LED_GPIO_OUT_Pin|STAT3_LED_GPIO_OUT_Pin, GPIO_PIN_RESET);
@@ -69,11 +69,9 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(ENCODER_SW_GPIO_IN_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PC14 PC15 PC0 PC1
-                           PC2 PC6 PC7 PC8
-                           PC12 */
+                           PC2 PC8 PC12 */
   GPIO_InitStruct.Pin = GPIO_PIN_14|GPIO_PIN_15|GPIO_PIN_0|GPIO_PIN_1
-                          |GPIO_PIN_2|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8
-                          |GPIO_PIN_12;
+                          |GPIO_PIN_2|GPIO_PIN_8|GPIO_PIN_12;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
@@ -84,8 +82,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PCPin PC4 PCPin */
-  GPIO_InitStruct.Pin = CH_EN_CMD_GPIO_OUT_Pin|GPIO_PIN_4|AMS_DRIVER_GPIO_OUT_Pin;
+  /*Configure GPIO pins : PCPin PCPin PCPin */
+  GPIO_InitStruct.Pin = CH_EN_CMD_GPIO_OUT_Pin|ERR_LED_GPIO_OUT_Pin|AMS_DRIVER_GPIO_OUT_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
