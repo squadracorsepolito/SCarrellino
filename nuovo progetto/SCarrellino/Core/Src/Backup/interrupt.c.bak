@@ -13,7 +13,7 @@
 #include "stdio.h"
 #include "can_functions.h"
 #include "interrupt.h"
-
+#include "nlg5_database_can.h"
 
 #define uart_print(X)                                         \
 do{                                                           \
@@ -104,13 +104,15 @@ extern bool volatile          can_rx_flag;
 // 1 -> v_cell
 // 2 -> tlb_battery_shut
 can_message can_buffer[can_message_rx_number];
+can_message can_buffer_brusa;
 
 
 //callback ricezione in fifo0
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
     
-    
-  if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, &RxData) != HAL_OK){
+
+if (hcan->Instance == CAN1 ){
+  if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader,(uint8_t *) &RxData) != HAL_OK){
     error_code = CAN_Rx_error;
     Error_Handler();
   }
@@ -136,6 +138,32 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
   }
 
 
+
+
+
+
+  if (hcan->Instance == CAN2){
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &RxHeader, (uint8_t *) &RxData) != HAL_OK){
+        error_code = CAN_Rx_error;
+        Error_Handler();
+    }
+
+    else{
+            
+        can_rx_flag = 1;
+
+        if(RxHeader.StdId == NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID) {
+
+            can_buffer_brusa.id = NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID;
+            for (uint8_t i = 0; i < 9; i++) can_buffer_brusa.data[i] = RxData[i];
+            can_buffer_brusa.data_present = 1;
+
+    }
+
+  }
+  
+}
+}
 
 
   

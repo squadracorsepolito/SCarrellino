@@ -67,14 +67,15 @@ void MX_CAN1_Init(void)
 CAN_FilterTypeDef filtriRx;
     filtriRx.FilterActivation     = ENABLE;
     filtriRx.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-    filtriRx.FilterBank           = 10u;
-    filtriRx.FilterIdHigh         = 0x0000;
-    filtriRx.FilterIdLow          = 0x0000;
-    filtriRx.FilterMaskIdHigh     = 0x0000;
-    filtriRx.FilterMaskIdLow      = 0x0000;
-    filtriRx.FilterMode           = CAN_FILTERMODE_IDMASK;
+    filtriRx.FilterBank           = 0u;
+    filtriRx.FilterIdHigh         = (0x0003u << 5);
+    filtriRx.FilterIdLow          = 0x0000u;
+    filtriRx.FilterMaskIdHigh     = (0x0004u << 5);
+    filtriRx.FilterMaskIdLow      = 0x0000u;
+    filtriRx.FilterMode           = CAN_FILTERMODE_IDLIST;
     filtriRx.FilterScale          = CAN_FILTERSCALE_32BIT;
-    filtriRx.SlaveStartFilterBank = 13u;
+    filtriRx.SlaveStartFilterBank = 4u;
+
 
 HAL_CAN_ConfigFilter(&hcan1, &filtriRx);
 
@@ -93,15 +94,15 @@ void MX_CAN2_Init(void)
 
   /* USER CODE END CAN2_Init 1 */
   hcan2.Instance = CAN2;
-  hcan2.Init.Prescaler = 16;
-  hcan2.Init.Mode = CAN_MODE_NORMAL;
+  hcan2.Init.Prescaler = 20;
+  hcan2.Init.Mode = CAN_MODE_LOOPBACK;
   hcan2.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan2.Init.TimeSeg1 = CAN_BS1_1TQ;
-  hcan2.Init.TimeSeg2 = CAN_BS2_1TQ;
+  hcan2.Init.TimeSeg1 = CAN_BS1_15TQ;
+  hcan2.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan2.Init.TimeTriggeredMode = DISABLE;
   hcan2.Init.AutoBusOff = DISABLE;
   hcan2.Init.AutoWakeUp = DISABLE;
-  hcan2.Init.AutoRetransmission = DISABLE;
+  hcan2.Init.AutoRetransmission = ENABLE;
   hcan2.Init.ReceiveFifoLocked = DISABLE;
   hcan2.Init.TransmitFifoPriority = DISABLE;
   if (HAL_CAN_Init(&hcan2) != HAL_OK)
@@ -112,14 +113,15 @@ void MX_CAN2_Init(void)
   CAN_FilterTypeDef filtriRx;
     filtriRx.FilterActivation     = ENABLE;
     filtriRx.FilterFIFOAssignment = CAN_FILTER_FIFO1;
-    filtriRx.FilterBank           = 11u;
-    filtriRx.FilterIdHigh         = 0x0000;
-    filtriRx.FilterIdLow          = NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID;
-    filtriRx.FilterMaskIdHigh     = 0x0000;
-    filtriRx.FilterMaskIdLow      = NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID;
+    filtriRx.FilterBank           = 4u;
+    filtriRx.FilterIdHigh         = (NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID << 5);  
+    filtriRx.FilterIdLow          = 0x0000;
+    filtriRx.FilterMaskIdHigh     = (NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID << 5);  
+    filtriRx.FilterMaskIdLow      = 0x0000;
     filtriRx.FilterMode           = CAN_FILTERMODE_IDLIST;
     filtriRx.FilterScale          = CAN_FILTERSCALE_32BIT;
-    filtriRx.SlaveStartFilterBank = 12u;
+    filtriRx.SlaveStartFilterBank = 4u;
+
 
 HAL_CAN_ConfigFilter(&hcan2, &filtriRx);
   /* USER CODE END CAN2_Init 2 */
@@ -163,13 +165,13 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
     HAL_GPIO_Init(D_CAN2_TX_GPIO_Port, &GPIO_InitStruct);
 
     /* CAN1 interrupt Init */
-    HAL_NVIC_SetPriority(CAN1_TX_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(CAN1_TX_IRQn, 1, 0);
     HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
-    HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 1, 0);
     HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
-    HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 1, 0);
     HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
-    HAL_NVIC_SetPriority(CAN1_SCE_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(CAN1_SCE_IRQn, 1, 0);
     HAL_NVIC_EnableIRQ(CAN1_SCE_IRQn);
   /* USER CODE BEGIN CAN1_MspInit 1 */
 
@@ -192,13 +194,29 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
     PB5     ------> CAN2_RX
     PB6     ------> CAN2_TX
     */
-    GPIO_InitStruct.Pin = R_CAN1_RX_Pin|R_CAN1_TX_Pin;
+    GPIO_InitStruct.Pin = R_CAN1_RX_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF9_CAN2;
+    HAL_GPIO_Init(R_CAN1_RX_GPIO_Port, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = R_CAN1_TX_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF9_CAN2;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    HAL_GPIO_Init(R_CAN1_TX_GPIO_Port, &GPIO_InitStruct);
 
+    /* CAN2 interrupt Init */
+    HAL_NVIC_SetPriority(CAN2_TX_IRQn, 2, 0);
+    HAL_NVIC_EnableIRQ(CAN2_TX_IRQn);
+    HAL_NVIC_SetPriority(CAN2_RX0_IRQn, 2, 0);
+    HAL_NVIC_EnableIRQ(CAN2_RX0_IRQn);
+    HAL_NVIC_SetPriority(CAN2_RX1_IRQn, 2, 0);
+    HAL_NVIC_EnableIRQ(CAN2_RX1_IRQn);
+    HAL_NVIC_SetPriority(CAN2_SCE_IRQn, 2, 0);
+    HAL_NVIC_EnableIRQ(CAN2_SCE_IRQn);
   /* USER CODE BEGIN CAN2_MspInit 1 */
 
   /* USER CODE END CAN2_MspInit 1 */
@@ -252,6 +270,11 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
     */
     HAL_GPIO_DeInit(GPIOB, R_CAN1_RX_Pin|R_CAN1_TX_Pin);
 
+    /* CAN2 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(CAN2_TX_IRQn);
+    HAL_NVIC_DisableIRQ(CAN2_RX0_IRQn);
+    HAL_NVIC_DisableIRQ(CAN2_RX1_IRQn);
+    HAL_NVIC_DisableIRQ(CAN2_SCE_IRQn);
   /* USER CODE BEGIN CAN2_MspDeInit 1 */
 
   /* USER CODE END CAN2_MspDeInit 1 */

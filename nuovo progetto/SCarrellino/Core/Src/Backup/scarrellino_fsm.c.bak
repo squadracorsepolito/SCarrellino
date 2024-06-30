@@ -41,11 +41,6 @@ double v_min_rx;
 double v_mean_rx;
 
 
- #define ChargeEN            HAL_GPIO_ReadPin(CH_EN_BUTTON_GPIO_IN_GPIO_Port, CH_EN_BUTTON_GPIO_IN_Pin) 
- #define ChargeBlueLedOn     HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 1);
- #define ChargeBlueLedOff    HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 0);
-
-
 
          
 FSM_callback_function run_callback_1(){
@@ -140,14 +135,14 @@ uint32_t _FSM_SCARRELLINO_FSM_IDLE_do_work() {
 
     if (ChargeEN == 1){
         
-        if( pre_ams_imd_error                == 1 &
-            post_ams_latch_error             == 0 &
-            sdc_closed_pre_tlb_batt_error    == 0 &
-            post_ams_imd_error               == 0 &
-            ams_error_latch_error            == 0 &
-            imd_error_latch_error            == 0 &
-            sdc_prch_rly_error               == 1 &
-            ChargeEN                         == 1 )
+        if( (pre_ams_imd_error                == 1) &
+            (post_ams_latch_error             == 0) &
+            (sdc_closed_pre_tlb_batt_error    == 0) &
+            (post_ams_imd_error               == 0) &
+            (ams_error_latch_error            == 0) &
+            (imd_error_latch_error            == 0) &
+            (sdc_prch_rly_error               == 1) &
+            (ChargeEN                         == 1) )
            {
 
             next = FSM_SCARRELLINO_FSM_CHARGE;
@@ -185,7 +180,7 @@ uint32_t _FSM_SCARRELLINO_FSM_CHARGE_event_handle(uint8_t event) {
 
 void FSM_SCARRELLINO_FSM_CHARGE_entry() {
     ChargeBlueLedOn;
-    HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 1);
+    ChargeENcmdON;
 }
 
 
@@ -196,14 +191,14 @@ uint32_t _FSM_SCARRELLINO_FSM_CHARGE_do_work() {
     can_rx_routine();
 
 
-        if( pre_ams_imd_error                == 1 &
-            post_ams_latch_error             == 0 &
-            sdc_closed_pre_tlb_batt_error    == 0 &
-            post_ams_imd_error               == 0 &
-            ams_error_latch_error            == 0 &
-            imd_error_latch_error            == 0 &
-            sdc_prch_rly_error               == 1 &
-            ChargeEN                         == 1 )
+        if( (pre_ams_imd_error                == 1) &
+            (post_ams_latch_error             == 0) &
+            (sdc_closed_pre_tlb_batt_error    == 0) &
+            (post_ams_imd_error               == 0) &
+            (ams_error_latch_error            == 0) &
+            (imd_error_latch_error            == 0) &
+            (sdc_prch_rly_error               == 1) &
+            (ChargeEN                         == 1) )
            {
 
         next = FSM_SCARRELLINO_FSM_CHARGE;
@@ -243,7 +238,7 @@ uint32_t _FSM_SCARRELLINO_FSM_STOP_CHARGE_do_work() {
     
     
     ChargeBlueLedOff;
-    HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 0);
+    ChargeENcmdOFF;
 
     uint32_t next = FSM_SCARRELLINO_FSM_DONE;
 

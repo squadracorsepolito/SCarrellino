@@ -135,14 +135,14 @@ uint32_t _FSM_SCARRELLINO_FSM_IDLE_do_work() {
 
     if (ChargeEN == 1){
         
-        if( pre_ams_imd_error                == 1 &
-            post_ams_latch_error             == 0 &
-            sdc_closed_pre_tlb_batt_error    == 0 &
-            post_ams_imd_error               == 0 &
-            ams_error_latch_error            == 0 &
-            imd_error_latch_error            == 0 &
-            sdc_prch_rly_error               == 1 &
-            ChargeEN                         == 1 )
+        if( (pre_ams_imd_error                == 1) &
+            (post_ams_latch_error             == 0) &
+            (sdc_closed_pre_tlb_batt_error    == 0) &
+            (post_ams_imd_error               == 0) &
+            (ams_error_latch_error            == 0) &
+            (imd_error_latch_error            == 0) &
+            (sdc_prch_rly_error               == 1) &
+            (ChargeEN                         == 1) )
            {
 
             next = FSM_SCARRELLINO_FSM_CHARGE;
@@ -191,14 +191,14 @@ uint32_t _FSM_SCARRELLINO_FSM_CHARGE_do_work() {
     can_rx_routine();
 
 
-        if( pre_ams_imd_error                == 1 &
-            post_ams_latch_error             == 0 &
-            sdc_closed_pre_tlb_batt_error    == 0 &
-            post_ams_imd_error               == 0 &
-            ams_error_latch_error            == 0 &
-            imd_error_latch_error            == 0 &
-            sdc_prch_rly_error               == 1 &
-            ChargeEN                         == 1 )
+        if( (pre_ams_imd_error                == 1) &
+            (post_ams_latch_error             == 0) &
+            (sdc_closed_pre_tlb_batt_error    == 0) &
+            (post_ams_imd_error               == 0) &
+            (ams_error_latch_error            == 0) &
+            (imd_error_latch_error            == 0) &
+            (sdc_prch_rly_error               == 1) &
+            (ChargeEN                         == 1) )
            {
 
         next = FSM_SCARRELLINO_FSM_CHARGE;

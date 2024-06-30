@@ -9,6 +9,7 @@
 #include "main.h"
 #include "tim.h"
 #include "ECU_level_functions.h"
+#include "usart.h"
 
 
 extern  char ntc_temp_buffer[20];
@@ -126,9 +127,20 @@ double extern v_mean_rx;
 void display_routine_1(){
 
     I2C_LCD_Home(I2C_LCD);
-    sprintf(buff, "v max id = %.2lf\n\r", v_max_id_rx);
-    I2C_LCD_WriteString(I2C_LCD, &buff);
+    sprintf(buff, "v max =%.2lf, ID=%.0lf",v_max_rx, v_max_id_rx);
+    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
+
+
+    sprintf(buff, "v min =%.2lf, ID=%.0lf",v_min_rx, v_min_id_rx );
+    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
+    I2C_LCD_ACapo(I2C_LCD);
+
+    sprintf(buff,"v mean=%.2lf", v_mean_rx );
+    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
+    I2C_LCD_ACapo(I2C_LCD);
+
+
 
 /*
     sprintf(state_buff, "position = %d  ", position);
@@ -141,15 +153,15 @@ void display_routine_1(){
 }
 
 
-
+double extern I_out_rx, V_out_rx;
 
 
 /** @brief display page 2  */
 void display_routine_2(){
 
     I2C_LCD_Home(I2C_LCD);
-    sprintf(buff, "page 2");
-    I2C_LCD_WriteString(I2C_LCD, &buff);
+    sprintf(buff, "V = %2.f I = %2.f", V_out_rx, I_out_rx);
+    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
  /*   
@@ -160,6 +172,64 @@ void display_routine_2(){
     //set the last page displayed
     old_position = 2;
 
+}
+
+
+
+
+
+
+extern uint8_t volatile error_code;
+
+/** @brief display errors  */
+void error_display(){
+     char error_buffer[40] = "";
+
+
+//aggiungi errore sconosciuto
+  #define display_error                \
+          do{                         \
+                        I2C_LCD_Clear; \
+                        I2C_LCD_Home;  \
+                        if(error_code != 30) sprintf(error_buffer, "error code: %d ", error_code); \
+                        else sprintf(error_buffer, "error code: unknown "); \
+                        I2C_LCD_WriteString(I2C_LCD, (char *)&error_buffer);  \
+          } while (0)
+          
+
+
+  switch (error_code)
+  {
+  case 0:
+    strcpy(error_buffer, "init fsm error");
+    break;
+  
+  case 1:
+    strcpy(error_buffer, "start fsm error");
+    break;
+    
+  case 2:
+    strcpy(error_buffer, "CAN start error");
+        break;
+
+  case 3:
+    strcpy(error_buffer, "CAN IT activation error");
+        break;
+
+  case 4:
+    strcpy(error_buffer, "CAN generic error");
+    break;
+
+  case 5:
+    strcpy(error_buffer, "CAN Rx error");
+      break;
+
+
+
+  }
+
+  display_error;
+  HAL_UART_Transmit(&LOG_UART, (uint8_t *) &error_buffer, strlen(error_buffer),10);
 }
 
 

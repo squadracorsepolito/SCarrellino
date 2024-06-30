@@ -111,8 +111,8 @@ can_message can_buffer_brusa;
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
     
 
-if (hcan->Instance == &hcan1 ){
-  if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, &RxData) != HAL_OK){
+if (hcan->Instance == CAN1 ){
+  if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader,(uint8_t *) &RxData) != HAL_OK){
     error_code = CAN_Rx_error;
     Error_Handler();
   }
@@ -135,15 +135,15 @@ if (hcan->Instance == &hcan1 ){
   }
 
 }
-  }
+  }}
 
 
 
 
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan){
 
-
-  if (hcan->Instance == &hcan2){
-    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &RxHeader, &RxData) != HAL_OK){
+  if (hcan->Instance == CAN2){
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &RxHeader, (uint8_t *) &RxData) != HAL_OK){
         error_code = CAN_Rx_error;
         Error_Handler();
     }

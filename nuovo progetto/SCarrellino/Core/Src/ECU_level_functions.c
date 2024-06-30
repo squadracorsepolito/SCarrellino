@@ -127,17 +127,23 @@ double extern v_mean_rx;
 void display_routine_1(){
 
     I2C_LCD_Home(I2C_LCD);
+
+    sprintf(buff, "CELLS INFO");
+    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
+    I2C_LCD_ACapo(I2C_LCD);
+
+
     sprintf(buff, "v max =%.2lf, ID=%.0lf",v_max_rx, v_max_id_rx);
-    I2C_LCD_WriteString(I2C_LCD, &buff);
+    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
 
     sprintf(buff, "v min =%.2lf, ID=%.0lf",v_min_rx, v_min_id_rx );
-    I2C_LCD_WriteString(I2C_LCD, &buff);
+    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
     sprintf(buff,"v mean=%.2lf", v_mean_rx );
-    I2C_LCD_WriteString(I2C_LCD, &buff);
+    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
 
@@ -153,15 +159,28 @@ void display_routine_1(){
 }
 
 
-
+double extern I_out_rx, V_out_rx, mains_i_rx, mains_v_rx;
 
 
 /** @brief display page 2  */
 void display_routine_2(){
 
     I2C_LCD_Home(I2C_LCD);
-    sprintf(buff, "page 2");
-    I2C_LCD_WriteString(I2C_LCD, &buff);
+
+    sprintf(buff, "CHARGE");
+    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
+    I2C_LCD_ACapo(I2C_LCD);
+
+    sprintf(buff, "V = %.2lf I = %.2lf", V_out_rx, I_out_rx);
+    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
+    I2C_LCD_ACapo(I2C_LCD);
+
+    sprintf(buff, "MAINS");
+    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
+    I2C_LCD_ACapo(I2C_LCD);
+
+    sprintf(buff, "V = %.2lf I = %.2lf", mains_v_rx, mains_i_rx);
+    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
  /*   
@@ -191,9 +210,9 @@ void error_display(){
           do{                         \
                         I2C_LCD_Clear; \
                         I2C_LCD_Home;  \
-                        if(error_code != 30) sprintf(error_buffer, "error code: %d", error_code); \
-                        else sprintf(error_buffer, "error code: unknown"); \
-                        I2C_LCD_WriteString(I2C_LCD, &error_buffer);  \
+                        if(error_code != 30) sprintf(error_buffer, "error code: %d ", error_code); \
+                        else sprintf(error_buffer, "error code: unknown "); \
+                        I2C_LCD_WriteString(I2C_LCD, (char *)&error_buffer);  \
           } while (0)
           
 

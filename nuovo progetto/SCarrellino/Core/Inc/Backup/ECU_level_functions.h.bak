@@ -8,3 +8,4 @@ void display_routine_0();
 void display_routine_1();
 void display_routine_2();
 void encoder_position_adjustment();
+void error_display();

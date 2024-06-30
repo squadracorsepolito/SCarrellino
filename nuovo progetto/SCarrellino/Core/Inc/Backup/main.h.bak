@@ -107,12 +107,23 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 #define LOG_UART huart2
 
+
+
+
+// error messages
 #define init_fsm_error 0
 #define fsm_start_error 1
 #define CAN_start_error 2
 #define CAN_it_activation_error 3
 #define CAN_generic_error 4
 #define CAN_Rx_error 5
+#define CAN_start_error_brusa 6
+
+ #define ChargeEN            HAL_GPIO_ReadPin(CH_EN_BUTTON_GPIO_IN_GPIO_Port, CH_EN_BUTTON_GPIO_IN_Pin) 
+ #define ChargeBlueLedOn     HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 1);
+ #define ChargeBlueLedOff    HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 0);
+ #define ChargeENcmdON       HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 1);
+ #define ChargeENcmdOFF      HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 0);
 
 
 /* USER CODE END Private defines */

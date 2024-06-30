@@ -146,7 +146,6 @@ int main(void)
   HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_4);
 
 
-
 // attivazione
 if(HAL_CAN_Start(&hcan1) != HAL_OK){
     error_code = CAN_start_error;
@@ -178,7 +177,7 @@ if (HAL_CAN_ActivateNotification(&hcan1,
   }
   
 if (HAL_CAN_ActivateNotification(&hcan2, 
-    CAN_IT_RX_FIFO0_MSG_PENDING |
+    CAN_IT_RX_FIFO1_MSG_PENDING |
     CAN_IT_ERROR_WARNING |
     CAN_IT_ERROR_PASSIVE |
     CAN_IT_BUSOFF |
@@ -209,6 +208,8 @@ if (HAL_CAN_ActivateNotification(&hcan2,
 can_tx_1();
 
 can_tx_2();
+
+can_tx_3();
 
 
 
