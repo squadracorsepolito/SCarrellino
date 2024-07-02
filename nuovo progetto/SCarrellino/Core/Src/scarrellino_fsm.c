@@ -17,10 +17,14 @@
 #include "stdbool.h"
 #include "ECU_level_functions.h"
 #include "can_functions.h"
+#include "tim.h"
 
 #ifndef __weak
 #define __weak __attribute__((weak))
 #endif // __weak
+
+
+
 
 
 //error signals
@@ -41,12 +45,11 @@ double v_min_rx;
 double v_mean_rx;
 
 
-
          
 FSM_callback_function run_callback_1(){
 
 display_routine();
-
+IMD_AMS_error_Led;
 
 
     return 0;
@@ -135,13 +138,14 @@ uint32_t _FSM_SCARRELLINO_FSM_IDLE_do_work() {
 
     if (ChargeEN == 1){
         
-        if( (pre_ams_imd_error                == 1) &
+        if( (pre_ams_imd_error                == 0) &
             (post_ams_latch_error             == 0) &
             (sdc_closed_pre_tlb_batt_error    == 0) &
             (post_ams_imd_error               == 0) &
             (ams_error_latch_error            == 0) &
             (imd_error_latch_error            == 0) &
-            (sdc_prch_rly_error               == 1) &
+            (sdc_prch_rly_error               == 0) &
+            (SDC_FUNGO                        == 1) &
             (ChargeEN                         == 1) )
            {
 
@@ -190,14 +194,23 @@ uint32_t _FSM_SCARRELLINO_FSM_CHARGE_do_work() {
 
     can_rx_routine();
 
+    double extern charge_temp;
 
-        if( (pre_ams_imd_error                == 1) &
+    if(charge_temp <= 29) TSAC_fan_off;
+
+    if((charge_temp >= 31) & (charge_temp <= 39)) TSAC_fan_half;
+
+    if(charge_temp >= 41) TSAC_fan_max;
+
+
+        if( (pre_ams_imd_error                == 0) &
             (post_ams_latch_error             == 0) &
             (sdc_closed_pre_tlb_batt_error    == 0) &
             (post_ams_imd_error               == 0) &
             (ams_error_latch_error            == 0) &
             (imd_error_latch_error            == 0) &
-            (sdc_prch_rly_error               == 1) &
+            (sdc_prch_rly_error               == 0) &
+            (SDC_FUNGO                        == 1) &
             (ChargeEN                         == 1) )
            {
 
@@ -236,9 +249,9 @@ uint32_t _FSM_SCARRELLINO_FSM_STOP_CHARGE_event_handle(uint8_t event) {
 /** @brief wrapper of FSM_SCARRELLINO_FSM_do_work, with exit state checking */
 uint32_t _FSM_SCARRELLINO_FSM_STOP_CHARGE_do_work() {
     
-    
-    ChargeBlueLedOff;
     ChargeENcmdOFF;
+    TSAC_fan_off;
+    ChargeBlueLedOff;
 
     uint32_t next = FSM_SCARRELLINO_FSM_DONE;
 
@@ -267,15 +280,16 @@ uint32_t _FSM_SCARRELLINO_FSM_DONE_event_handle(uint8_t event) {
 uint32_t _FSM_SCARRELLINO_FSM_DONE_do_work() {
     uint32_t next;
 
-    if (HAL_GPIO_ReadPin(CH_EN_BUTTON_GPIO_IN_GPIO_Port, CH_EN_BUTTON_GPIO_IN_Pin) == 1){
+    if (ChargeEN == 1){
+        
         next = FSM_SCARRELLINO_FSM_DONE;
-        HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 1);
+        Stat3LedOn;
         
     }
 
     else{
         next = FSM_SCARRELLINO_FSM_IDLE;
-                HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 0);
+        Stat3LedOff;
 
     }
     

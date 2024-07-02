@@ -104,10 +104,18 @@ extern bool volatile          can_rx_flag;
 // 1 -> v_cell
 // 2 -> tlb_battery_shut
 can_message can_buffer[can_message_rx_number];
-can_message can_buffer_brusa;
+can_message can_buffer_brusa[2];
 
 
-//callback ricezione in fifo0
+/*
+
+callback RX in FIFO0
+
+receives the messages from PODIUM HV BMS (v_cell)
+                           TLB BATTERY   (tlb_battery_shut)
+
+*/
+
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
     
 
@@ -135,12 +143,18 @@ if (hcan->Instance == CAN1 ){
   }
 
 }
-  }
+  }}
 
 
 
+/*
 
+callback RX FIFO1
+receives all the messages from the BRUSA CHARGER    
 
+*/
+
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan){
 
   if (hcan->Instance == CAN2){
     if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &RxHeader, (uint8_t *) &RxData) != HAL_OK){
@@ -154,11 +168,20 @@ if (hcan->Instance == CAN1 ){
 
         if(RxHeader.StdId == NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID) {
 
-            can_buffer_brusa.id = NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID;
-            for (uint8_t i = 0; i < 9; i++) can_buffer_brusa.data[i] = RxData[i];
-            can_buffer_brusa.data_present = 1;
+            can_buffer_brusa[0].id = NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID;
+            for (uint8_t i = 0; i < 9; i++) can_buffer_brusa[0].data[i] = RxData[i];
+            can_buffer_brusa[0].data_present = 1;
 
     }
+        if(RxHeader.StdId == NLG5_DATABASE_CAN_NLG5_TEMP_FRAME_ID) {
+
+            can_buffer_brusa[1].id = NLG5_DATABASE_CAN_NLG5_TEMP_FRAME_ID;
+            for (uint8_t i = 0; i < 9; i++) can_buffer_brusa[1].data[i] = RxData[i];
+            can_buffer_brusa[1].data_present = 1;
+
+    }
+
+
 
   }
   

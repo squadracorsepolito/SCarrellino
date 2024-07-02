@@ -29,6 +29,7 @@
 #include "mcb.h"
 #include "main.h"
 #include "nlg5_database_can.h"
+#include "can_functions.h"
 
 
 /* USER CODE END 0 */
@@ -67,14 +68,15 @@ void MX_CAN1_Init(void)
 CAN_FilterTypeDef filtriRx;
     filtriRx.FilterActivation     = ENABLE;
     filtriRx.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-    filtriRx.FilterBank           = 10u;
-    filtriRx.FilterIdHigh         = 0x0000;
-    filtriRx.FilterIdLow          = 0x0000;
-    filtriRx.FilterMaskIdHigh     = 0x0000;
-    filtriRx.FilterMaskIdLow      = 0x0000;
-    filtriRx.FilterMode           = CAN_FILTERMODE_IDMASK;
+    filtriRx.FilterBank           = 0u;
+    filtriRx.FilterIdHigh         = (v_cell_id << 5);
+    filtriRx.FilterIdLow          = 0x0000u;
+    filtriRx.FilterMaskIdHigh     = (tlb_battery_shut_id << 5);
+    filtriRx.FilterMaskIdLow      = 0x0000u;
+    filtriRx.FilterMode           = CAN_FILTERMODE_IDLIST;
     filtriRx.FilterScale          = CAN_FILTERSCALE_32BIT;
-    filtriRx.SlaveStartFilterBank = 13u;
+    filtriRx.SlaveStartFilterBank = 4u;
+
 
 HAL_CAN_ConfigFilter(&hcan1, &filtriRx);
 
@@ -112,14 +114,15 @@ void MX_CAN2_Init(void)
   CAN_FilterTypeDef filtriRx;
     filtriRx.FilterActivation     = ENABLE;
     filtriRx.FilterFIFOAssignment = CAN_FILTER_FIFO1;
-    filtriRx.FilterBank           = 9u;
-    filtriRx.FilterIdHigh         = 0x0000;
-    filtriRx.FilterIdLow          = NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID;
-    filtriRx.FilterMaskIdHigh     = 0x0000;
-    filtriRx.FilterMaskIdLow      = NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID;
+    filtriRx.FilterBank           = 4u;
+    filtriRx.FilterIdHigh         = (NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID << 5);  
+    filtriRx.FilterIdLow          = 0x0000;
+    filtriRx.FilterMaskIdHigh     = (NLG5_DATABASE_CAN_NLG5_TEMP_FRAME_ID << 5);  
+    filtriRx.FilterMaskIdLow      = 0x0000;
     filtriRx.FilterMode           = CAN_FILTERMODE_IDLIST;
     filtriRx.FilterScale          = CAN_FILTERSCALE_32BIT;
-    filtriRx.SlaveStartFilterBank = 12u;
+    filtriRx.SlaveStartFilterBank = 4u;
+
 
 HAL_CAN_ConfigFilter(&hcan2, &filtriRx);
   /* USER CODE END CAN2_Init 2 */
@@ -192,12 +195,19 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
     PB5     ------> CAN2_RX
     PB6     ------> CAN2_TX
     */
-    GPIO_InitStruct.Pin = R_CAN1_RX_Pin|R_CAN1_TX_Pin;
+    GPIO_InitStruct.Pin = R_CAN1_RX_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF9_CAN2;
+    HAL_GPIO_Init(R_CAN1_RX_GPIO_Port, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = R_CAN1_TX_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF9_CAN2;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    HAL_GPIO_Init(R_CAN1_TX_GPIO_Port, &GPIO_InitStruct);
 
     /* CAN2 interrupt Init */
     HAL_NVIC_SetPriority(CAN2_TX_IRQn, 2, 0);

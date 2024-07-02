@@ -190,6 +190,10 @@ uint32_t _FSM_SCARRELLINO_FSM_CHARGE_do_work() {
 
     can_rx_routine();
 
+double extern charge_temp;
+
+    if(charge_temp < 29) 
+
 
         if( (pre_ams_imd_error                == 1) &
             (post_ams_latch_error             == 0) &

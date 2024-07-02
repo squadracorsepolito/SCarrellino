@@ -51,6 +51,10 @@
 /* USER CODE BEGIN PD */
 #define MyI2C_LCD I2C_LCD
 
+
+
+
+
 uint8_t raw = 0u;
 
 bool start_fsm = 0;
@@ -141,6 +145,8 @@ int main(void)
   I2C_LCD_Init(MyI2C_LCD);
 
   HAL_TIM_PWM_Start(&htim3 ,TIM_CHANNEL_4);
+  HAL_TIM_PWM_Start(&htim12 ,TIM_CHANNEL_2);
+
   HAL_ADC_Start_DMA(&hadc1, (uint32_t *) &ntc_value, 1);
   HAL_TIM_Encoder_Start_IT(&htim3, TIM_CHANNEL_ALL);
   HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_4);
@@ -163,6 +169,7 @@ if(HAL_CAN_Start(&hcan2) != HAL_OK){
  // attivazione interrupt Rx
 if (HAL_CAN_ActivateNotification(&hcan1, 
     CAN_IT_RX_FIFO0_MSG_PENDING |
+    CAN_IT_RX_FIFO1_MSG_PENDING |
     CAN_IT_ERROR_WARNING |
     CAN_IT_ERROR_PASSIVE |
     CAN_IT_BUSOFF |
@@ -205,13 +212,19 @@ if (HAL_CAN_ActivateNotification(&hcan2,
   }
 
 
+#ifdef TEST
+
 can_tx_1();
 
 can_tx_2();
 
 can_tx_3();
 
+can_tx_4();
 
+can_tx_5();
+
+#endif
 
 
 
@@ -305,6 +318,8 @@ void Error_Handler(void)
 
     //STOP CHARGE
     ChargeENcmdOFF;
+    ChargeBlueLedOff;
+    WarnLedOn;
 
   //display error
     error_display();

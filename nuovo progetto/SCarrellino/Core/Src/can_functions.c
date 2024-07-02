@@ -60,26 +60,15 @@ HAL_StatusTypeDef can_send(CAN_HandleTypeDef *hcan, uint8_t *buffer, CAN_TxHeade
 }
 
 */
+
+
+
+
+
 CAN_TxHeaderTypeDef   TxHeader;
-uint8_t               tlb_battery_shut_buffer[8];
-uint8_t               tlb_battery_tsal_buffer[8];
-uint8_t               v_cell_buffer[8];
-uint8_t               brusa_buffer[8];
 
-double pre_ams_imd = 1u;
-double post_ams_latch = 0;
-double post_ams_imd = 0;
-double sdc_closed_pre_tlb_batt = 0;
-double ams_error_latch = 0;
-double imd_error_latch = 0;
-double sdc_prch_rly = 1u; 
+uint8_t               buffer_tx[8];
 
-
-double v_max = 4.6;
-double v_min = 3.2;
-double v_mean = 3.4;
-double v_max_id = 24u;
-double v_min_id = 70u;
 
 
 uint8_t extern  pre_ams_imd_error, post_ams_latch_error, post_ams_imd_error, sdc_closed_pre_tlb_batt_error, ams_error_latch_error,\
@@ -93,7 +82,10 @@ extern uint8_t                           RxData;
 struct mcb_tlb_battery_shut_status_t     tlb_shut_rx;
 extern CAN_RxHeaderTypeDef               RxHeader;
 struct hvcb_hvb_rx_v_cell_t              v_cell_rx;
-struct nlg5_database_can_nlg5_act_i_t    brusa_rx;
+struct nlg5_database_can_nlg5_act_i_t    brusa_rx_voltage;
+struct hvcb_hvb_rx_t_cell_t              t_cell;
+struct hvcb_hvb_rx_soc_t                 SOC_struct_rx;
+
 
 
 
@@ -101,15 +93,15 @@ struct nlg5_database_can_nlg5_act_i_t    brusa_rx;
 
 
 
-
-
-
 double extern v_max_id_rx, v_min_id_rx, v_max_rx, v_min_rx, v_mean_rx;
 
-double mains_v = 230.4, mains_i = 22.456;
-double I_out   = 10.5,  V_out   = 100.578;
 
 double mains_v_rx, mains_i_rx, I_out_rx, V_out_rx;
+
+
+double charge_temp;
+
+double SOC;
 
 
 
@@ -124,21 +116,35 @@ char buffer[400] = {0};
 volatile extern uint8_t       can_id;
 
 
+/*
+
+ from TLB BATTERY we receive signals about imd error, ams error, sdc open state, sdc precharge relay state 
+
+ from the PODIUM HV BMS info about the voltages of the hv battery pack cells 
+
+ form the BRUSA CHARGER info about charging and mains voltage and current 
+
+ */
+
 void can_rx_routine(void){
 
 
     if (can_rx_flag == 1){
         
         HAL_UART_Transmit(&huart2, (uint8_t *)"messaggio ricevuto: \n\r", strlen("messaggio ricevuto: \n\r"),100);
-        if((can_buffer[0].data_present == 0) & (can_buffer[1].data_present == 0) & (can_buffer_brusa.data_present == 0)) can_rx_flag = 0;
 
 
+        if((can_buffer[0].data_present == 0) & (can_buffer[1].data_present == 0) & (can_buffer_brusa.data_present == 0) & (can_buffer[2].data_present == 0) ) can_rx_flag = 0;
+
+
+
+        //TLB BATTERY
         if(can_buffer[1].data_present == 1){
         
         can_buffer[1].data_present = 0;
 
         mcb_tlb_battery_shut_status_init(&tlb_shut_rx);
-        mcb_tlb_battery_shut_status_unpack(&tlb_shut_rx,(uint8_t *) &can_buffer[1].data, 4);
+        mcb_tlb_battery_shut_status_unpack(&tlb_shut_rx,(uint8_t *) &can_buffer[1].data, MCB_TLB_BATTERY_SHUT_STATUS_LENGTH);
 
         
 
@@ -158,13 +164,13 @@ void can_rx_routine(void){
     
         }
 
-
+        // PODIUM HV BMS voltage
         if (can_buffer[0].data_present == 1){
 
             can_buffer[0].data_present = 0;
 
             hvcb_hvb_rx_v_cell_init(&v_cell_rx);
-            hvcb_hvb_rx_v_cell_unpack(&v_cell_rx,(uint8_t *) &can_buffer[0].data, sizeof(can_buffer[0].data));
+            hvcb_hvb_rx_v_cell_unpack(&v_cell_rx,(uint8_t *) &can_buffer[0].data, HVCB_HVB_RX_V_CELL_LENGTH);
 
             v_max_id_rx = hvcb_hvb_rx_v_cell_hvb_idx_cell_u_max_decode(v_cell_rx.hvb_idx_cell_u_max);
             v_min_id_rx = hvcb_hvb_rx_v_cell_hvb_idx_cell_u_min_decode(v_cell_rx.hvb_idx_cell_u_min);
@@ -179,25 +185,54 @@ void can_rx_routine(void){
         }
 
 
-
+        //BRUSA voltage
         if(can_buffer_brusa.data_present == 1){
             
             can_buffer_brusa.data_present = 0;
 
-            memset(&brusa_rx, 0, sizeof(brusa_rx));
-            nlg5_database_can_nlg5_act_i_unpack(&brusa_rx,(uint8_t *) &can_buffer_brusa.data, sizeof(can_buffer_brusa.data));
+            memset(&brusa_rx_voltage, 0, sizeof(brusa_rx_voltage));
+            nlg5_database_can_nlg5_act_i_unpack(&brusa_rx_voltage,(uint8_t *) &can_buffer_brusa.data, NLG5_DATABASE_CAN_NLG5_ACT_I_LENGTH);
 
-            mains_i_rx = nlg5_database_can_nlg5_act_i_nlg5_mc_act_decode(brusa_rx.nlg5_mc_act);
-            mains_v_rx = nlg5_database_can_nlg5_act_i_nlg5_mv_act_decode(brusa_rx.nlg5_mv_act);
-            V_out_rx   = nlg5_database_can_nlg5_act_i_nlg5_ov_act_decode(brusa_rx.nlg5_ov_act);
-            I_out_rx   = nlg5_database_can_nlg5_act_i_nlg5_oc_act_decode(brusa_rx.nlg5_oc_act);
+            mains_i_rx = nlg5_database_can_nlg5_act_i_nlg5_mc_act_decode(brusa_rx_voltage.nlg5_mc_act);
+            mains_v_rx = nlg5_database_can_nlg5_act_i_nlg5_mv_act_decode(brusa_rx_voltage.nlg5_mv_act);
+            V_out_rx   = nlg5_database_can_nlg5_act_i_nlg5_ov_act_decode(brusa_rx_voltage.nlg5_ov_act);
+            I_out_rx   = nlg5_database_can_nlg5_act_i_nlg5_oc_act_decode(brusa_rx_voltage.nlg5_oc_act);
 
-            sprintf(buffer, "V = %2.f\n\rI = %2.f", V_out_rx, I_out_rx);
+            sprintf(buffer, "V = %.2lf\n\rI = %.2lf", V_out_rx, I_out_rx);
             HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
 
             
         }
 
+        // PODIUM HV BMS temp
+        if (can_buffer[2].data_present == 1){
+
+            can_buffer[2].data_present = 0;
+
+            hvcb_hvb_rx_t_cell_init(&t_cell);
+            hvcb_hvb_rx_t_cell_unpack(&t_cell, (uint8_t *) &can_buffer[2].data, HVCB_HVB_RX_T_CELL_LENGTH);
+
+            charge_temp = hvcb_hvb_rx_t_cell_hvb_t_cell_max_decode(t_cell.hvb_t_cell_max);
+
+            sprintf(buffer, "charging temp = %.2lf", charge_temp);
+            HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
+
+        }
+
+        if(can_buffer[3].data_present == 1){
+
+            can_buffer[3].data_present = 0;
+
+            hvcb_hvb_rx_soc_init(&SOC_struct_rx);
+            hvcb_hvb_rx_soc_unpack(&SOC_struct_rx, (uint8_t* ) &can_buffer[3].data, HVCB_HVB_RX_SOC_LENGTH);
+
+            SOC = hvcb_hvb_rx_soc_hvb_r_so_c_hvb_u_cell_min_decode(SOC_struct_rx.hvb_r_so_c_hvb_u_cell_min);
+
+            sprintf(buffer, "SOC = %.2lf", SOC);
+            HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
+
+
+        }
 
     }
 }
@@ -205,9 +240,7 @@ void can_rx_routine(void){
 
 
 
-
-
-
+#ifdef TEST
 
 
 /*
@@ -238,6 +271,14 @@ void can_tx_1(){
 //mcb_tlb_battery_shut packing
 mcb_tlb_battery_shut_status_init(&tlb_shut);
 
+double pre_ams_imd = 0u;
+double post_ams_latch = 0;
+double post_ams_imd = 0;
+double sdc_closed_pre_tlb_batt = 0;
+double ams_error_latch = 0;
+double imd_error_latch = 0;
+double sdc_prch_rly = 0u; 
+
 tlb_shut.is_shut_closed_pre_ams_imd_latch       = mcb_tlb_battery_shut_status_is_shut_closed_pre_ams_imd_latch_encode(pre_ams_imd);
 tlb_shut.is_shut_closed_post_ams_latch          = mcb_tlb_battery_shut_status_is_shut_closed_post_ams_latch_encode(post_ams_latch);
 tlb_shut.is_shut_closed_post_imd_latch          = mcb_tlb_battery_shut_status_is_shut_closed_post_imd_latch_encode(post_ams_imd);
@@ -246,14 +287,12 @@ tlb_shut.is_ams_error_latched                   = mcb_tlb_battery_shut_status_is
 tlb_shut.is_imd_error_latched                   = mcb_tlb_battery_shut_status_is_imd_error_latched_encode(imd_error_latch);
 tlb_shut.is_sd_prch_rly_closed                  = mcb_tlb_battery_shut_status_is_sd_prch_rly_closed_encode(sdc_prch_rly);
 
-mcb_tlb_battery_shut_status_pack((uint8_t *)&tlb_battery_shut_buffer, &tlb_shut, sizeof(tlb_battery_shut_buffer));
-
-
+mcb_tlb_battery_shut_status_pack((uint8_t *)&buffer_tx, &tlb_shut, sizeof(buffer_tx));
 
 
 
 // impostazioni e Tx can
-TxHeader.DLC = sizeof(tlb_battery_shut_buffer);
+TxHeader.DLC = sizeof(buffer_tx);
 TxHeader.IDE = CAN_ID_STD;
 TxHeader.StdId = tlb_battery_shut_id;
 TxHeader.ExtId = 0;
@@ -262,7 +301,7 @@ TxHeader.TransmitGlobalTime = DISABLE;
 
 
 
-if(can_send(&hcan1,(uint8_t *) &tlb_battery_shut_buffer, &TxHeader, CAN_RX_FIFO0) != HAL_OK) Error_Handler();
+if(can_send(&hcan1,(uint8_t *) &buffer_tx, &TxHeader, CAN_RX_FIFO0) != HAL_OK) Error_Handler();
 
 
 
@@ -274,6 +313,12 @@ void can_tx_2(){
 
 struct hvcb_hvb_rx_v_cell_t          v_cell;
 
+double v_max = 4.6;
+double v_min = 3.2;
+double v_mean = 3.4;
+double v_max_id = 24u;
+double v_min_id = 70u;
+
 //hvcb_hvb_rx_v_cell packing
 
 hvcb_hvb_rx_v_cell_init(&v_cell);
@@ -284,13 +329,13 @@ v_cell.hvb_u_cell_max     = hvcb_hvb_rx_v_cell_hvb_u_cell_max_encode (v_max);
 v_cell.hvb_u_cell_min     = hvcb_hvb_rx_v_cell_hvb_u_cell_min_encode(v_min);
 v_cell.hvb_u_cell_mean    = hvcb_hvb_rx_v_cell_hvb_u_cell_mean_encode(v_mean);
 
-hvcb_hvb_rx_v_cell_pack((uint8_t *)&v_cell_buffer, &v_cell, sizeof(v_cell_buffer));
+hvcb_hvb_rx_v_cell_pack((uint8_t *)&buffer_tx, &v_cell, sizeof(buffer_tx));
 
 
-TxHeader.DLC = sizeof(v_cell_buffer);
+TxHeader.DLC = sizeof(buffer_tx);
 TxHeader.StdId = v_cell_id;
 
-if(can_send(&hcan1,(uint8_t *) &v_cell_buffer, &TxHeader, CAN_RX_FIFO0)!= HAL_OK) Error_Handler();
+if(can_send(&hcan1,(uint8_t *) &buffer_tx, &TxHeader, CAN_RX_FIFO0)!= HAL_OK) Error_Handler();
 
 }
 
@@ -300,8 +345,11 @@ if(can_send(&hcan1,(uint8_t *) &v_cell_buffer, &TxHeader, CAN_RX_FIFO0)!= HAL_OK
 void can_tx_3(){
 
     struct nlg5_database_can_nlg5_act_i_t    brusa;
-    // brusa packing
 
+    double mains_v = 230.4, mains_i = 22.456;
+    double I_out   = 10.5,  V_out   = 100.578;
+
+    // brusa packing
     memset(&brusa, 0, sizeof(brusa));
 
     brusa.nlg5_mc_act = nlg5_database_can_nlg5_act_i_nlg5_mc_act_encode(mains_i);
@@ -309,15 +357,58 @@ void can_tx_3(){
     brusa.nlg5_oc_act = nlg5_database_can_nlg5_act_i_nlg5_oc_act_encode(I_out);
     brusa.nlg5_ov_act = nlg5_database_can_nlg5_act_i_nlg5_ov_act_encode(V_out);
 
-    nlg5_database_can_nlg5_act_i_pack((uint8_t *)&brusa_buffer, &brusa, sizeof(brusa_buffer));
+    nlg5_database_can_nlg5_act_i_pack((uint8_t *)&buffer_tx, &brusa, sizeof(buffer_tx));
 
-    TxHeader.DLC   = sizeof(brusa_buffer);
+    TxHeader.DLC   = sizeof(buffer_tx);
     TxHeader.StdId = NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID;
 
-    if (can_send(&hcan2,(uint8_t *) &brusa_buffer, &TxHeader, CAN_RX_FIFO1) != HAL_OK) Error_Handler(); 
+    if (can_send(&hcan2,(uint8_t *) &buffer_tx, &TxHeader, CAN_RX_FIFO1) != HAL_OK) Error_Handler(); 
     
     
 }
 
 
 
+void can_tx_4(){
+
+    struct  hvcb_hvb_rx_t_cell_t charge_temp_struct;
+
+    double charge_temp = 41;
+
+    hvcb_hvb_rx_t_cell_init(&charge_temp_struct);
+    charge_temp_struct.hvb_t_cell_max = hvcb_hvb_rx_t_cell_hvb_t_cell_max_encode(charge_temp);
+
+    hvcb_hvb_rx_t_cell_pack((uint8_t *) &buffer_tx, &charge_temp_struct, 8);
+
+    TxHeader.DLC   = sizeof(buffer_tx);
+    TxHeader.StdId = HVCB_HVB_RX_T_CELL_FRAME_ID;
+
+    if (can_send(&hcan1,(uint8_t *) &buffer_tx, &TxHeader, CAN_RX_FIFO1) != HAL_OK) Error_Handler(); 
+
+}
+
+
+void can_tx_5(){
+
+    struct hvcb_hvb_rx_soc_t SOC_struct;
+
+    double SOC = 0;
+
+    hvcb_hvb_rx_soc_init(&SOC_struct);
+    SOC_struct.hvb_r_so_c_hvb_u_cell_min = hvcb_hvb_rx_soc_hvb_r_so_c_hvb_u_cell_min_encode(SOC);
+
+    hvcb_hvb_rx_soc_pack((uint8_t *) &buffer_tx, &SOC_struct, HVCB_HVB_RX_SOC_LENGTH);
+
+    TxHeader.DLC   = sizeof(buffer_tx);
+    TxHeader.StdId = HVCB_HVB_RX_SOC_LENGTH;
+
+    if (can_send(&hcan1,(uint8_t *) &buffer_tx, &TxHeader, CAN_RX_FIFO1) != HAL_OK) Error_Handler(); 
+
+}
+
+
+
+
+
+
+#endif

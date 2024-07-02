@@ -105,9 +105,10 @@ void Error_Handler(void);
 #define D_CAN2_TX_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-#define LOG_UART huart2
+#define LOG_UART huart3
 
-
+//define to enable the test functions
+#define TEST 0
 
 
 // error messages
@@ -124,6 +125,52 @@ void Error_Handler(void);
  #define ChargeBlueLedOff    HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 0);
  #define ChargeENcmdON       HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 1);
  #define ChargeENcmdOFF      HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 0);
+
+#define half_power 65535/2
+#define full_power 65535
+#define TSAC_fan_off __HAL_TIM_SET_COMPARE(&htim12, TIM_CHANNEL_2, 0)
+#define TSAC_fan_half __HAL_TIM_SET_COMPARE(&htim12, TIM_CHANNEL_2, half_power)
+#define TSAC_fan_max __HAL_TIM_SET_COMPARE(&htim12, TIM_CHANNEL_2, full_power)
+
+#define IMD_led_on HAL_GPIO_WritePin(IMD_DRIVER_GPIO_OUT_GPIO_Port, IMD_DRIVER_GPIO_OUT_Pin, 1)
+#define AMS_led_on HAL_GPIO_WritePin(AMS_DRIVER_GPIO_OUT_GPIO_Port, AMS_DRIVER_GPIO_OUT_Pin, 1)
+#define IMD_led_off HAL_GPIO_WritePin(IMD_DRIVER_GPIO_OUT_GPIO_Port, IMD_DRIVER_GPIO_OUT_Pin, 0)
+#define AMS_led_off HAL_GPIO_WritePin(AMS_DRIVER_GPIO_OUT_GPIO_Port, AMS_DRIVER_GPIO_OUT_Pin, 0)
+
+#define SDC_FUNGO HAL_GPIO_ReadPin(SDC_FUNGO_GPIO_IN_GPIO_Port, SDC_FUNGO_GPIO_IN_Pin)
+
+#define Stat3LedOn  HAL_GPIO_WritePin(STAT3_LED_GPIO_OUT_GPIO_Port, STAT3_LED_GPIO_OUT_Pin, 1)
+#define Stat3LedOff HAL_GPIO_WritePin(STAT3_LED_GPIO_OUT_GPIO_Port, STAT3_LED_GPIO_OUT_Pin, 0)
+
+#define WarnLedOn   HAL_GPIO_WritePin(WARN_LED_GPIO_OUT_GPIO_Port, WARN_LED_GPIO_OUT_Pin, 1)
+#define WarnLedOff  HAL_GPIO_WritePin(WARN_LED_GPIO_OUT_GPIO_Port, WARN_LED_GPIO_OUT_Pin, 0)
+
+#define IMD_AMS_error_Led             \
+do{                                       \
+             if((pre_ams_imd_error == 1) | (post_ams_imd_error == 1) | (imd_error_latch_error == 1)){  \
+               IMD_led_on;\
+               WarnLedOn;\
+               }\
+          \
+             else{\
+               IMD_led_off;\
+               WarnLedOff;\
+             }\
+          \
+          \
+             if(ams_error_latch_error == 1) \
+             {     \
+               AMS_led_on;\
+               WarnLedOn;\
+           }\
+          \
+             else{ \     
+                AMS_led_off;\
+               WarnLedOff;\
+             }\
+}while(0)
+
+
 
 
 /* USER CODE END Private defines */

@@ -14,6 +14,7 @@
 #include "can_functions.h"
 #include "interrupt.h"
 #include "nlg5_database_can.h"
+#include "hvcb.h"
 
 #define uart_print(X)                                         \
 do{                                                           \
@@ -107,7 +108,15 @@ can_message can_buffer[can_message_rx_number];
 can_message can_buffer_brusa;
 
 
-//callback ricezione in fifo0
+/*
+
+callback RX in FIFO0
+
+receives the messages from PODIUM HV BMS (v_cell)
+                           TLB BATTERY   (tlb_battery_shut)
+
+*/
+
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan){
     
 
@@ -139,6 +148,12 @@ if (hcan->Instance == CAN1 ){
 
 
 
+/*
+
+callback RX FIFO1
+receives all the messages from the BRUSA CHARGER    
+
+*/
 
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan){
 
@@ -159,11 +174,45 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan){
             can_buffer_brusa.data_present = 1;
 
     }
+    }
+    }
+
+
+
+    if (hcan->Instance == CAN1){
+    if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &RxHeader, (uint8_t *) &RxData) != HAL_OK){
+        error_code = CAN_Rx_error;
+        Error_Handler();
+    }
+
+    else{
+
+        can_rx_flag = 1;
+
+
+        if(RxHeader.StdId == HVCB_HVB_RX_T_CELL_FRAME_ID) {
+
+            can_buffer[2].id = HVCB_HVB_RX_T_CELL_FRAME_ID;
+            for (uint8_t i = 0; i < 9; i++) can_buffer[2].data[i] = RxData[i];
+            can_buffer[2].data_present = 1;
+
+    }
+    
+        if(RxHeader.StdId == HVCB_HVB_RX_SOC_FRAME_ID) {
+
+            can_buffer[3].id = HVCB_HVB_RX_SOC_FRAME_ID;
+            for (uint8_t i = 0; i < 9; i++) can_buffer[3].data[i] = RxData[i];
+            can_buffer[3].data_present = 1;
+
+    }
+    }
+
+
 
   }
   
 }
-}
+
 
 
   

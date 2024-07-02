@@ -107,7 +107,8 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 #define LOG_UART huart2
 
-
+//define to enable the test functions
+#define TEST 0
 
 
 // error messages

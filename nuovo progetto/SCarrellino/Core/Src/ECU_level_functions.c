@@ -74,12 +74,19 @@ if(ADC_conv_flag == 1){
 /** @brief display page: temperature, state of charge */
 void display_routine_0(){
 
+    double extern charge_temp, SOC;
+    
 
-    //temperature
+
+
+    //temperature extern
     I2C_LCD_Home(I2C_LCD);
-    sprintf(ntc_temp_buffer,"Temperature : %d C ", ntc_temp);
+    sprintf(ntc_temp_buffer,"Ext Temp    : %d C ", ntc_temp);
     I2C_LCD_WriteString(I2C_LCD, (char*) &ntc_temp_buffer);
     ADC_conv_flag = 0;
+
+
+
 
     //State
     I2C_LCD_ACapo(I2C_LCD);
@@ -101,6 +108,28 @@ void display_routine_0(){
 
     sprintf(state_buff, "State = %s   ", state);
     I2C_LCD_WriteString(I2C_LCD,(char *) &state_buff);
+
+
+    // state of charge
+    I2C_LCD_ACapo(I2C_LCD);
+    sprintf(ntc_temp_buffer,"Batt Charge : %.1lf%% ", (SOC*0.04 + 50));
+    I2C_LCD_WriteString(I2C_LCD, (char*) &ntc_temp_buffer);
+
+
+    //charging temperature
+    if (hfsm.current_state == 1){
+        I2C_LCD_ACapo(I2C_LCD);
+        sprintf(ntc_temp_buffer,"Charge Temp : %.0lf C ", charge_temp);
+        I2C_LCD_WriteString(I2C_LCD, (char*) &ntc_temp_buffer);
+     
+    }
+
+    else{
+        I2C_LCD_ACapo(I2C_LCD);
+        sprintf(ntc_temp_buffer, "                   ");
+        I2C_LCD_WriteString(I2C_LCD, (char*) &ntc_temp_buffer);
+        }
+
 
 /*
     I2C_LCD_ACapo(I2C_LCD);
@@ -133,16 +162,16 @@ void display_routine_1(){
     I2C_LCD_ACapo(I2C_LCD);
 
 
-    sprintf(buff, "v max =%.2lf, ID=%.0lf",v_max_rx, v_max_id_rx);
+    sprintf(buff, "v max  =%.2lf ID=%.0lf",v_max_rx, v_max_id_rx);
     I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
 
-    sprintf(buff, "v min =%.2lf, ID=%.0lf",v_min_rx, v_min_id_rx );
+    sprintf(buff, "v min  =%.2lf ID=%.0lf",v_min_rx, v_min_id_rx );
     I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
-    sprintf(buff,"v mean=%.2lf", v_mean_rx );
+    sprintf(buff,"v mean =%.2lf", v_mean_rx );
     I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
@@ -208,10 +237,14 @@ void error_display(){
 //aggiungi errore sconosciuto
   #define display_error                \
           do{                         \
-                        I2C_LCD_Clear; \
-                        I2C_LCD_Home;  \
+                        I2C_LCD_Clear(I2C_LCD); \
+                        I2C_LCD_Home(I2C_LCD);  \
                         if(error_code != 30) sprintf(error_buffer, "error code: %d ", error_code); \
                         else sprintf(error_buffer, "error code: unknown "); \
+                        I2C_LCD_WriteString(I2C_LCD, (char *)&error_buffer);  \
+                        \
+                        I2C_LCD_ACapo(I2C_LCD);                    \
+                        sprintf(error_buffer, "CHARGE STOPPED"); \
                         I2C_LCD_WriteString(I2C_LCD, (char *)&error_buffer);  \
           } while (0)
           

@@ -11,3 +11,6 @@ void can_rx_routine(void);
 void can_tx_1();
 void can_tx_2();
 void can_tx_3();
+void can_tx_4();
+void can_tx_5();
+
