@@ -18,7 +18,7 @@ extern volatile bool ADC_conv_flag;
 
 char state_buff[30];
 char state[15];
-char buff[16];
+char buff[24];
 extern FSM_HandleTypeDef hfsm;
 
 
@@ -106,7 +106,7 @@ void display_routine_0(){
     }
 
 
-    sprintf(state_buff, "State = %s   ", state);
+    sprintf(state_buff, "State : %s   ", state);
     I2C_LCD_WriteString(I2C_LCD,(char *) &state_buff);
 
 
@@ -244,7 +244,7 @@ void error_display(){
                         I2C_LCD_WriteString(I2C_LCD, (char *)&error_buffer);  \
                         \
                         I2C_LCD_ACapo(I2C_LCD);                    \
-                        sprintf(error_buffer, "CHARGE STOPPED"); \
+                        sprintf(error_buffer, "CHARGE STOPPED "); \
                         I2C_LCD_WriteString(I2C_LCD, (char *)&error_buffer);  \
           } while (0)
           
@@ -276,7 +276,19 @@ void error_display(){
     strcpy(error_buffer, "CAN Rx error");
       break;
 
+  
+    case 6:
+    strcpy(error_buffer, "CAN 2 start error");
+      break;
 
+  
+  case 7:
+      strcpy(error_buffer, "watchdog error");
+      break;
+
+  case 8:
+      strcpy(error_buffer, "can send error");
+      break;
 
   }
 
@@ -336,3 +348,132 @@ txheader(&TxHeader, Txdata, id);
 
 
 #endif*/
+
+
+
+uint32_t MilElapsed(bool reset){
+   uint32_t static start;
+ 
+
+   if(reset == 1) start = HAL_GetTick();
+      uint32_t  mil = HAL_GetTick() - start;
+
+   return mil;
+
+}
+
+
+void buzzer_routine(){
+
+    extern bool buzzer_charge_on;
+    extern bool buzzer_stop_charge_on;
+    
+    uint8_t static flag = 0;
+    
+    if(buzzer_charge_on == 1){
+
+        if(flag == 0){
+
+            MilElapsed(1);
+            buzzer_800hz;
+
+            #ifndef silence
+            buzzer_on;
+            #endif
+
+            flag = 1;
+        }
+
+        if ((MilElapsed(0) >= 600) & (flag == 1)){
+            buzzer_1khz;
+            flag = 2;
+            }
+
+        if((MilElapsed(0) >= 1200) & (flag == 2)){
+            buzzer_12khz;
+            flag = 3;
+        }
+
+        if((MilElapsed(0) >= 1800) & (flag == 3)){
+            buzzer_off;
+            buzzer_charge_on = 0;
+            flag = 0;
+        }    
+        
+    }
+
+    if(buzzer_stop_charge_on == 1){
+
+        if(flag == 0){
+            MilElapsed(1);
+            buzzer_12khz;
+
+            #ifndef silence
+            buzzer_on;
+            #endif
+            
+            flag = 1;
+        }
+        if ((MilElapsed(0) >= 600) & (flag == 1)){
+            buzzer_1khz;
+            flag = 2;
+            }
+        if((MilElapsed(0) >= 1200) & (flag == 2)){
+            buzzer_800hz;
+            flag = 3;
+        }
+        if((MilElapsed(0) >= 1800) & (flag == 3)){
+            buzzer_off;
+            buzzer_stop_charge_on = 0;
+            flag = 0;
+        }    
+    }
+}
+
+
+
+
+
+void IMD_AMS_error_handler(){
+
+    extern double imd_err_is_active, ams_err_is_active;                                                  
+                                                                          
+     if(imd_err_is_active == 1){  
+       IMD_err_on;                                                        
+       WarnLedOn;                                                         
+       }                                                                  
+                                                                          
+     else{                                                                
+       IMD_err_off;                                                       
+       WarnLedOff;                                                        
+     }                                                                    
+                                                                          
+                                                                          
+     if(ams_err_is_active == 1)                                           
+     {                                                                    
+       AMS_err_on;                                                        
+       WarnLedOn;                                                         
+   }                                                                      
+                                                                          
+     else{                                                                
+       AMS_err_off;                                                      
+       WarnLedOff;                                                        
+     }                                                                    
+     }
+
+
+
+void TSAC_FAN_Handler(){
+    
+    double extern charge_temp;
+
+    if(charge_temp <= 29) TSAC_fan_off;
+
+    if((charge_temp >= 31) & (charge_temp <= 39)) {
+        TSAC_fan_half;
+        }
+
+    if(charge_temp >= 41) {
+        TSAC_fan_max;
+        } 
+}

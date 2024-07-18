@@ -63,12 +63,12 @@ void Error_Handler(void);
 #define adc_timer_value 500
 #define ENCODER_SW_GPIO_IN_Pin GPIO_PIN_13
 #define ENCODER_SW_GPIO_IN_GPIO_Port GPIOC
-#define CH_EN_CMD_GPIO_OUT_Pin GPIO_PIN_3
-#define CH_EN_CMD_GPIO_OUT_GPIO_Port GPIOC
 #define CH_EN_BUTTON_GPIO_IN_Pin GPIO_PIN_0
 #define CH_EN_BUTTON_GPIO_IN_GPIO_Port GPIOA
 #define SDC_FUNGO_GPIO_IN_Pin GPIO_PIN_1
 #define SDC_FUNGO_GPIO_IN_GPIO_Port GPIOA
+#define CH_EN_CMD_GPIO_OUT_Pin GPIO_PIN_2
+#define CH_EN_CMD_GPIO_OUT_GPIO_Port GPIOA
 #define STAT2_LED_GPIO_OUT_Pin GPIO_PIN_4
 #define STAT2_LED_GPIO_OUT_GPIO_Port GPIOA
 #define STAT1_LED_GPIO_OUT_Pin GPIO_PIN_5
@@ -108,36 +108,74 @@ void Error_Handler(void);
 #define LOG_UART huart3
 
 //define to enable the test functions
-#define TEST 0
+//#define TEST 
+
+//#define silence 
 
 
 // error messages
 #define init_fsm_error 0
 #define fsm_start_error 1
-#define CAN_start_error 2
+#define CAN1_start_error 2
 #define CAN_it_activation_error 3
 #define CAN_generic_error 4
 #define CAN_Rx_error 5
-#define CAN_start_error_brusa 6
+#define CAN2_start_error 6
+#define watch_dog_error 7
+#define can_send_error 8
 
  #define ChargeEN            HAL_GPIO_ReadPin(CH_EN_BUTTON_GPIO_IN_GPIO_Port, CH_EN_BUTTON_GPIO_IN_Pin) 
  #define ChargeBlueLedOn     HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 1);
  #define ChargeBlueLedOff    HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 0);
- #define ChargeENcmdON       HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 1);
- #define ChargeENcmdOFF      HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 0);
+ #define ChargeENcmdON       HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 0);
+ #define ChargeENcmdOFF      HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 1);
 
+#define _800hz 1249
+#define _1khz 999 
+#define _12khz 832
 #define half_power 65535/2
-#define full_power 65535
-#define TSAC_fan_off __HAL_TIM_SET_COMPARE(&htim12, TIM_CHANNEL_2, 0)
+#define full_power 0
+#define TSAC_fan_on  HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_2)
+#define TSAC_fan_off __HAL_TIM_SET_COMPARE(&htim12, TIM_CHANNEL_2, 65535)
 #define TSAC_fan_half __HAL_TIM_SET_COMPARE(&htim12, TIM_CHANNEL_2, half_power)
 #define TSAC_fan_max __HAL_TIM_SET_COMPARE(&htim12, TIM_CHANNEL_2, full_power)
+#define buzzer_on   HAL_TIMEx_PWMN_Start(&htim8 ,TIM_CHANNEL_2);
 
-#define IMD_led_on HAL_GPIO_WritePin(IMD_DRIVER_GPIO_OUT_GPIO_Port, IMD_DRIVER_GPIO_OUT_Pin, 1)
-#define AMS_led_on HAL_GPIO_WritePin(AMS_DRIVER_GPIO_OUT_GPIO_Port, AMS_DRIVER_GPIO_OUT_Pin, 1)
-#define IMD_led_off HAL_GPIO_WritePin(IMD_DRIVER_GPIO_OUT_GPIO_Port, IMD_DRIVER_GPIO_OUT_Pin, 0)
-#define AMS_led_off HAL_GPIO_WritePin(AMS_DRIVER_GPIO_OUT_GPIO_Port, AMS_DRIVER_GPIO_OUT_Pin, 0)
+
+#define buzzer_800hz                                              \
+        do{                                             \
+             __HAL_TIM_SET_AUTORELOAD(&htim8,_800hz);    \
+            __HAL_TIM_SET_COMPARE(&htim8,TIM_CHANNEL_2, (_800hz + 1)/2); \
+        }while (0)
+
+#define buzzer_1khz                                              \
+                do{                                             \
+                     __HAL_TIM_SET_AUTORELOAD(&htim8,_1khz);    \
+                    __HAL_TIM_SET_COMPARE(&htim8,TIM_CHANNEL_2, (_1khz + 1)/2); \
+                }while (0)
+
+#define buzzer_12khz                                              \
+                do{                                             \
+                     __HAL_TIM_SET_AUTORELOAD(&htim8,_12khz);    \
+                    __HAL_TIM_SET_COMPARE(&htim8,TIM_CHANNEL_2, (_12khz + 1)/2); \
+                }while (0)
+                
+                
+#define buzzer_off  HAL_TIMEx_PWMN_Stop(&htim8 ,TIM_CHANNEL_2);
+
+
+#define IMD_err_on HAL_GPIO_WritePin(IMD_DRIVER_GPIO_OUT_GPIO_Port, IMD_DRIVER_GPIO_OUT_Pin, 0)
+#define AMS_err_on HAL_GPIO_WritePin(AMS_DRIVER_GPIO_OUT_GPIO_Port, AMS_DRIVER_GPIO_OUT_Pin, 0)
+#define IMD_err_off HAL_GPIO_WritePin(IMD_DRIVER_GPIO_OUT_GPIO_Port, IMD_DRIVER_GPIO_OUT_Pin, 1)
+#define AMS_err_off HAL_GPIO_WritePin(AMS_DRIVER_GPIO_OUT_GPIO_Port, AMS_DRIVER_GPIO_OUT_Pin, 1)
 
 #define SDC_FUNGO HAL_GPIO_ReadPin(SDC_FUNGO_GPIO_IN_GPIO_Port, SDC_FUNGO_GPIO_IN_Pin)
+
+#define Stat2LedOn  HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 1)
+#define Stat2LedOff HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 0)
+
+#define Stat1LedOn  HAL_GPIO_WritePin(STAT1_LED_GPIO_OUT_GPIO_Port, STAT1_LED_GPIO_OUT_Pin, 1)
+#define Stat1LedOff HAL_GPIO_WritePin(STAT1_LED_GPIO_OUT_GPIO_Port, STAT1_LED_GPIO_OUT_Pin, 0)
 
 #define Stat3LedOn  HAL_GPIO_WritePin(STAT3_LED_GPIO_OUT_GPIO_Port, STAT3_LED_GPIO_OUT_Pin, 1)
 #define Stat3LedOff HAL_GPIO_WritePin(STAT3_LED_GPIO_OUT_GPIO_Port, STAT3_LED_GPIO_OUT_Pin, 0)
@@ -145,30 +183,11 @@ void Error_Handler(void);
 #define WarnLedOn   HAL_GPIO_WritePin(WARN_LED_GPIO_OUT_GPIO_Port, WARN_LED_GPIO_OUT_Pin, 1)
 #define WarnLedOff  HAL_GPIO_WritePin(WARN_LED_GPIO_OUT_GPIO_Port, WARN_LED_GPIO_OUT_Pin, 0)
 
-#define IMD_AMS_error_Led             \
-do{                                       \
-             if((pre_ams_imd_error == 1) | (post_ams_imd_error == 1) | (imd_error_latch_error == 1)){  \
-               IMD_led_on;\
-               WarnLedOn;\
-               }\
-          \
-             else{\
-               IMD_led_off;\
-               WarnLedOff;\
-             }\
-          \
-          \
-             if(ams_error_latch_error == 1) \
-             {     \
-               AMS_led_on;\
-               WarnLedOn;\
-           }\
-          \
-             else{ \     
-                AMS_led_off;\
-               WarnLedOff;\
-             }\
-}while(0)
+#define ErrLedOn   HAL_GPIO_WritePin(ERR_LED_GPIO_OUT_GPIO_Port, ERR_LED_GPIO_OUT_Pin, 1)
+#define ErrnLedOff  HAL_GPIO_WritePin(ERR_LED_GPIO_OUT_GPIO_Port, ERR_LED_GPIO_OUT_Pin, 0)
+
+
+
 
 
 

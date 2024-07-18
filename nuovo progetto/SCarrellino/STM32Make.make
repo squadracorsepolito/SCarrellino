@@ -39,6 +39,7 @@ C_SOURCES =  \
 Core/Src/ECU_level_functions.c \
 Core/Src/I2C_LCD.c \
 Core/Src/I2C_LCD_cfg.c \
+Core/Src/SW_Watchdog.c \
 Core/Src/Util.c \
 Core/Src/adc.c \
 Core/Src/can.c \
@@ -56,6 +57,8 @@ Core/Src/ntc.c \
 Core/Src/scarrellino_fsm.c \
 Core/Src/stm32f4xx_hal_msp.c \
 Core/Src/stm32f4xx_it.c \
+Core/Src/syscalls.c \
+Core/Src/sysmem.c \
 Core/Src/system_stm32f4xx.c \
 Core/Src/tim.c \
 Core/Src/usart.c \

@@ -13,4 +13,9 @@ void can_tx_2();
 void can_tx_3();
 void can_tx_4();
 void can_tx_5();
-
+void can_tx_6();
+void can_tx_7();
+void AIR_CAN_Cmd_On();
+void AIR_CAN_Cmd_Off();
+void can_WD_setting();
+void can_WD_start();

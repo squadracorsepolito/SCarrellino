@@ -33,7 +33,7 @@ extern uint8_t error_code;
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc){
     
   ntc_temp = get_ntc_temperature(ntc_value);
-  HAL_GPIO_TogglePin(STAT1_LED_GPIO_OUT_GPIO_Port, STAT1_LED_GPIO_OUT_Pin);
+  //HAL_GPIO_TogglePin(STAT1_LED_GPIO_OUT_GPIO_Port, STAT1_LED_GPIO_OUT_Pin);
   ADC_conv_flag = 1;
   
 }
@@ -130,18 +130,17 @@ if (hcan->Instance == CAN1 ){
   
     can_rx_flag = 1;
     
-    if(RxHeader.StdId == v_cell_id) {
-        can_buffer[0].id = v_cell_id;
+    if(RxHeader.StdId == HVCB_HVB_RX_V_CELL_FRAME_ID) {
+        can_buffer[0].id = HVCB_HVB_RX_V_CELL_FRAME_ID;
         for (uint8_t i = 0; i < 9; i++) can_buffer[0].data[i] = RxData[i];
         can_buffer[0].data_present = 1;
     }
 
-    else if(RxHeader.StdId == tlb_battery_shut_id){
-        can_buffer[1].id = tlb_battery_shut_id;
-        for (uint8_t i = 0; i < 9; i++) can_buffer[1].data[i] = RxData[i];
-        can_buffer[1].data_present = 1;
-        
-  }
+    if(RxHeader.StdId == HVCB_HVB_TX_VCU_CMD_FRAME_ID) {
+        can_buffer[5].id = HVCB_HVB_TX_VCU_CMD_FRAME_ID;
+        for (uint8_t i = 0; i < 9; i++) can_buffer[5].data[i] = RxData[i];
+        can_buffer[5].data_present = 1;
+    }
 
 }
   }}
@@ -174,6 +173,22 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan){
             can_buffer_brusa.data_present = 1;
 
     }
+
+        if(RxHeader.StdId == MCB_TLB_BAT_SIGNALS_STATUS_FRAME_ID) {
+
+            can_buffer[4].id = MCB_TLB_BAT_SIGNALS_STATUS_FRAME_ID;
+            for (uint8_t i = 0; i < 9; i++) can_buffer[4].data[i] = RxData[i];
+            can_buffer[4].data_present = 1;
+
+    }
+
+        if(RxHeader.StdId == MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME_ID){
+            can_buffer[1].id = MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME_ID;
+            for (uint8_t i = 0; i < 9; i++) can_buffer[1].data[i] = RxData[i];
+            can_buffer[1].data_present = 1;
+        
+  }
+
     }
     }
 
@@ -266,11 +281,34 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){
 
 
 
+bool volatile test = 1;
+uint16_t volatile oc = 2;
+
 
 
 uint16_t volatile tim4_count = adc_timer_value;
 
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef * htim){
+
+    if(htim->Instance == TIM4){
     tim4_count += adc_timer_value;
     __HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4,tim4_count);
+}
+
+
+}
+
+
+
+void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim){
+
+    extern bool volatile AIR_CAN_Cmd;
+
+    if(htim->Instance == TIM6){
+
+            if(AIR_CAN_Cmd == 0) AIR_CAN_Cmd_Off();
+            if(AIR_CAN_Cmd == 1) AIR_CAN_Cmd_On();
+
+    }
+
 }

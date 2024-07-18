@@ -9,3 +9,7 @@ void display_routine_1();
 void display_routine_2();
 void encoder_position_adjustment();
 void error_display();
+uint32_t MilElapsed(bool reset);
+void buzzer_routine();
+void IMD_AMS_error_handler();
+void TSAC_FAN_Handler();
