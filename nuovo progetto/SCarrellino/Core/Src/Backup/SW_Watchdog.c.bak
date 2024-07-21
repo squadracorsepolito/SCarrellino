@@ -40,7 +40,7 @@ void SW_Watchdog_start(char info_struct_name){
     
 }
 
-//the routine function, to be put in  the while(0)
+//the routine function, to be put in  the while(1)
 HAL_StatusTypeDef SW_Wachdog_routine(){
 
     uint8_t static i = 0;

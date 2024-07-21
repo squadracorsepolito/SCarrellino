@@ -214,8 +214,22 @@ if (HAL_CAN_ActivateNotification(&hcan2,
     Error_Handler();
   }
 
+
+IMD_err_on;
+AMS_err_on;
 can_WD_setting();
-can_WD_start();
+//can_WD_start();
+
+
+
+
+//AIR_CAN_Cmd_On();
+//ChargeENcmdON();
+//I2C_LCD_Clear(I2C_LCD);
+//I2C_LCD_WriteString(I2C_LCD, "air chiusi");
+//__disable_irq();
+
+
 
 HAL_TIM_Base_Start_IT(&htim6);
 
@@ -248,6 +262,8 @@ can_tx_7();
   {
 
    FSM_routine(&hfsm);
+
+   /*
    if (SW_Wachdog_routine() != HAL_OK){
 
     error_code = watch_dog_error;
@@ -265,6 +281,8 @@ can_tx_7();
 
      
      }
+
+     */
 
     /* USER CODE END WHILE */
 

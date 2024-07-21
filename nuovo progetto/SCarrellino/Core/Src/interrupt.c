@@ -33,7 +33,7 @@ extern uint8_t error_code;
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc){
     
   ntc_temp = get_ntc_temperature(ntc_value);
-  //HAL_GPIO_TogglePin(STAT1_LED_GPIO_OUT_GPIO_Port, STAT1_LED_GPIO_OUT_Pin);
+  HAL_GPIO_TogglePin(STAT1_LED_GPIO_OUT_GPIO_Port, STAT1_LED_GPIO_OUT_Pin);
   ADC_conv_flag = 1;
   
 }
@@ -244,7 +244,7 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan){
 void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan){
     char msg[30];
     sprintf(msg, "\rmessaggio trasmesso \n\r");
-    HAL_UART_Transmit(&LOG_UART, (uint8_t *)&msg, strlen(msg),10);
+  //  HAL_UART_Transmit(&LOG_UART, (uint8_t *)&msg, strlen(msg),10);
 }
 
 
@@ -308,6 +308,15 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef * htim){
 
             if(AIR_CAN_Cmd == 0) AIR_CAN_Cmd_Off();
             if(AIR_CAN_Cmd == 1) AIR_CAN_Cmd_On();
+
+    }
+
+    if(htim->Instance == TIM7){
+
+        ChargeENcmdON;
+        HAL_TIM_OC_Stop_IT(&htim7, TIM_CHANNEL_ALL);
+        __HAL_TIM_SET_COUNTER(&htim7, 0);
+
 
     }
 

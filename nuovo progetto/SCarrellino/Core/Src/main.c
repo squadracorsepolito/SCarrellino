@@ -143,6 +143,7 @@ int main(void)
   MX_TIM2_Init();
   MX_USART3_UART_Init();
   MX_TIM6_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
 
@@ -223,11 +224,11 @@ can_WD_setting();
 
 
 
-AIR_CAN_Cmd_On();
+//AIR_CAN_Cmd_On();
 //ChargeENcmdON();
-I2C_LCD_Clear(I2C_LCD);
-I2C_LCD_WriteString(I2C_LCD, "air chiusi");
-__disable_irq();
+//I2C_LCD_Clear(I2C_LCD);
+//I2C_LCD_WriteString(I2C_LCD, "air chiusi");
+//__disable_irq();
 
 
 
@@ -261,28 +262,28 @@ can_tx_7();
   while (1)
   {
 
-   //FSM_routine(&hfsm);
+   FSM_routine(&hfsm);
 
-   /*
-   if (SW_Wachdog_routine() != HAL_OK){
+   
+   //if (SW_Wachdog_routine() != HAL_OK){
+//
+   // error_code = watch_dog_error;
+   // char buffer[40];
+   // extern bool  index_error[number_of_struct];
+   // for (uint8_t i = 0;i< number_of_struct; i++){
+   //    if (index_error[i] == 1) {
+   //     sprintf(buffer, "watch dog error index = %d\n\r", i);
+   //     HAL_UART_Transmit(&LOG_UART, (uint8_t *)buffer, strlen(buffer), 100);
+   //    }
+//
+//
+   // }
+   // Error_Handler();
+//
+   //  
+   //  }
 
-    error_code = watch_dog_error;
-    char buffer[40];
-    extern bool  index_error[number_of_struct];
-    for (uint8_t i = 0;i< number_of_struct; i++){
-       if (index_error[i] == 1) {
-        sprintf(buffer, "watch dog error index = %d\n\r", i);
-        HAL_UART_Transmit(&LOG_UART, (uint8_t *)buffer, strlen(buffer), 100);
-       }
-
-
-    }
-    Error_Handler();
-
-     
-     }
-
-     */
+    
 
     /* USER CODE END WHILE */
 
@@ -365,7 +366,7 @@ void Error_Handler(void)
 
     ChargeENcmdOFF;
     ChargeBlueLedOff;
-    ErrLedOn;
+    WarnLedOn;
     TSAC_fan_off;
 
   //display error

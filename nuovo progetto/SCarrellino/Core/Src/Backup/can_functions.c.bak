@@ -618,7 +618,10 @@ void AIR_CAN_Cmd_On(){
     TxHeader.DLC   = HVCB_HVB_TX_VCU_CMD_LENGTH;
     TxHeader.StdId = HVCB_HVB_TX_VCU_CMD_FRAME_ID;
 
-    if (can_send(&hcan2,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX0) != HAL_OK) Error_Handler(); 
+    if (can_send(&hcan2,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX0) != HAL_OK) {
+        uint8_t volatile extern error_code;
+        error_code = can_send_error;
+        Error_Handler();} 
 
 
 }
@@ -644,7 +647,10 @@ void AIR_CAN_Cmd_Off(){
     TxHeader.DLC   = HVCB_HVB_TX_VCU_CMD_LENGTH;
     TxHeader.StdId = HVCB_HVB_TX_VCU_CMD_FRAME_ID;
 
-    if (can_send(&hcan2,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX0) != HAL_OK) Error_Handler(); 
+    if (can_send(&hcan2,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX0) != HAL_OK){
+        uint8_t volatile extern error_code;
+        error_code = can_send_error;
+        Error_Handler(); }
 
 
 }

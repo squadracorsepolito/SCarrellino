@@ -286,6 +286,9 @@ void error_display(){
       strcpy(error_buffer, "watchdog error");
       break;
 
+  case 8:
+      strcpy(error_buffer, "can send error");
+      break;
 
   }
 
@@ -365,7 +368,7 @@ void buzzer_routine(){
     extern bool buzzer_charge_on;
     extern bool buzzer_stop_charge_on;
     
-    uint8_t static flag = 0;
+    bool static flag = 0;
     
     if(buzzer_charge_on == 1){
 

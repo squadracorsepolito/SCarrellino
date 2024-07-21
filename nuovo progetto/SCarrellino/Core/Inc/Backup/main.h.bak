@@ -108,9 +108,9 @@ void Error_Handler(void);
 #define LOG_UART huart3
 
 //define to enable the test functions
-#define TEST 
+//#define TEST 
 
-#define silence 
+//#define silence 
 
 
 // error messages
@@ -122,6 +122,7 @@ void Error_Handler(void);
 #define CAN_Rx_error 5
 #define CAN2_start_error 6
 #define watch_dog_error 7
+#define can_send_error 8
 
  #define ChargeEN            HAL_GPIO_ReadPin(CH_EN_BUTTON_GPIO_IN_GPIO_Port, CH_EN_BUTTON_GPIO_IN_Pin) 
  #define ChargeBlueLedOn     HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 1);
@@ -163,10 +164,10 @@ void Error_Handler(void);
 #define buzzer_off  HAL_TIMEx_PWMN_Stop(&htim8 ,TIM_CHANNEL_2);
 
 
-#define IMD_err_on HAL_GPIO_WritePin(IMD_DRIVER_GPIO_OUT_GPIO_Port, IMD_DRIVER_GPIO_OUT_Pin, 0)
-#define AMS_err_on HAL_GPIO_WritePin(AMS_DRIVER_GPIO_OUT_GPIO_Port, AMS_DRIVER_GPIO_OUT_Pin, 0)
-#define IMD_err_off HAL_GPIO_WritePin(IMD_DRIVER_GPIO_OUT_GPIO_Port, IMD_DRIVER_GPIO_OUT_Pin, 1)
-#define AMS_err_off HAL_GPIO_WritePin(AMS_DRIVER_GPIO_OUT_GPIO_Port, AMS_DRIVER_GPIO_OUT_Pin, 1)
+#define IMD_err_on HAL_GPIO_WritePin(IMD_DRIVER_GPIO_OUT_GPIO_Port, IMD_DRIVER_GPIO_OUT_Pin, 1)
+#define AMS_err_on HAL_GPIO_WritePin(AMS_DRIVER_GPIO_OUT_GPIO_Port, AMS_DRIVER_GPIO_OUT_Pin, 1)
+#define IMD_err_off HAL_GPIO_WritePin(IMD_DRIVER_GPIO_OUT_GPIO_Port, IMD_DRIVER_GPIO_OUT_Pin, 0)
+#define AMS_err_off HAL_GPIO_WritePin(AMS_DRIVER_GPIO_OUT_GPIO_Port, AMS_DRIVER_GPIO_OUT_Pin, 0)
 
 #define SDC_FUNGO HAL_GPIO_ReadPin(SDC_FUNGO_GPIO_IN_GPIO_Port, SDC_FUNGO_GPIO_IN_Pin)
 

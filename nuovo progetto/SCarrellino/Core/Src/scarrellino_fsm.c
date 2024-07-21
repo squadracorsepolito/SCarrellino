@@ -31,10 +31,10 @@ bool volatile AIR_CAN_Cmd = 0;
 
 
 //tlb sdc signals
-double sdc_tsac_initial_in_is_active, 
-       sdc_post_ams_imd_relay_is_active, 
-       sdc_tsac_final_in_is_active, 
-       sdc_prch_rly_is_closed;
+double sdc_tsac_initial_in_is_active = 0, 
+       sdc_post_ams_imd_relay_is_active = 0, 
+       sdc_tsac_final_in_is_active = 0, 
+       sdc_prch_rly_is_closed = 0 ;
 
 
 
@@ -156,13 +156,16 @@ uint32_t _FSM_SCARRELLINO_FSM_IDLE_do_work() {
     
     can_rx_routine();
 
+   // bool volatile prova     = ChargeEN;
+   // bool volatile prova_sdc = SDC_FUNGO;
+
     uint32_t next;
 
     if (ChargeEN == 0){ 
         if( (sdc_tsac_initial_in_is_active              == 1) &
             (sdc_tsac_final_in_is_active                == 1) &
             (sdc_post_ams_imd_relay_is_active           == 1) &
-            (sdc_prch_rly_is_closed                     == 1) &
+            (sdc_prch_rly_is_closed                     == 0) &
             (air_neg_cmd_is_active                      == 0) &
             (air_neg_is_closed                          == 0) &
             (air_neg_stg_mech_state_signal_is_active    == 0) &
@@ -218,7 +221,6 @@ uint32_t _FSM_SCARRELLINO_FSM_CHARGE_event_handle(uint8_t event) {
 
 void FSM_SCARRELLINO_FSM_CHARGE_entry() {
     ChargeBlueLedOn;
-    ChargeENcmdON;
     buzzer_charge_on = 1;
     AIR_CAN_Cmd = 1;
 }
@@ -229,17 +231,13 @@ uint32_t _FSM_SCARRELLINO_FSM_CHARGE_do_work() {
     uint32_t next;
 
     can_rx_routine();
-
     TSAC_FAN_Handler();
 
 
         if( (sdc_tsac_initial_in_is_active              == 1) &
             (sdc_tsac_final_in_is_active                == 1) &
             (sdc_post_ams_imd_relay_is_active           == 1) &
-            (sdc_prch_rly_is_closed                     == 1) &
             (ams_err_is_active                          == 0) &
-            (dcbus_prech_rly_cmd_is_active              == 0) &
-            (dcbus_prech_rly_is_closed                  == 0) &
             (imd_err_is_active                          == 0) &
             (imp_ai_rs_signals_is_active                == 0) &
             (imp_any_is_active                          == 0) &
@@ -250,6 +248,13 @@ uint32_t _FSM_SCARRELLINO_FSM_CHARGE_do_work() {
                
            
            {
+        
+        if ((air_neg_is_closed == 1) & (air_neg_cmd_is_active == 1)){
+
+            HAL_TIM_OC_Start_IT(&htim7, TIM_CHANNEL_ALL);
+
+        }
+
 
         next = FSM_SCARRELLINO_FSM_CHARGE;
            }

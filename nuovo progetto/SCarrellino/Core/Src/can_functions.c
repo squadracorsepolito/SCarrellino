@@ -126,7 +126,7 @@ double mains_v_rx,
 
 double charge_temp;
 
-double SOC;
+double SOC = -50/0.04;
 
 
 double vcu_clr_err,
@@ -159,7 +159,7 @@ void can_rx_routine(void){
 
     if (can_rx_flag == 1){
         
-        HAL_UART_Transmit(&LOG_UART, (uint8_t *)"messaggio ricevuto: \n\r", strlen("messaggio ricevuto: \n\r"),100);
+        //HAL_UART_Transmit(&LOG_UART, (uint8_t *)"messaggio ricevuto: \n\r", strlen("messaggio ricevuto: \n\r"),100);
 
 
         if((can_buffer[0].data_present == 0) & (can_buffer[1].data_present == 0) & (can_buffer[5].data_present == 0) & \
@@ -195,7 +195,7 @@ sdc_prch_rly_is_closed                = %.0lf \n\r"\
                                                                  sdc_post_ams_imd_relay_is_active,             \
                                                                  sdc_tsac_final_in_is_active,        \
                                                                  sdc_prch_rly_is_closed);
-        HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
+       // HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
 
     
         }
@@ -218,7 +218,7 @@ sdc_prch_rly_is_closed                = %.0lf \n\r"\
 
 
             sprintf(buffer, "v max id = %.0f \n\rv min id = %.0f \n\rv max = %.2f \n\rv min = %.2f \n\rv mean = %.2f \n\r", v_max_id_rx, v_min_id_rx, v_max_rx, v_min_rx, v_mean_rx);
-            HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
+            //HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
 
         }
 
@@ -240,7 +240,7 @@ sdc_prch_rly_is_closed                = %.0lf \n\r"\
             I_out_rx   = nlg5_database_can_nlg5_act_i_nlg5_oc_act_decode(brusa_rx_voltage.nlg5_oc_act);
 
             sprintf(buffer, "V = %.2lf\n\rI = %.2lf\n\r", V_out_rx, I_out_rx);
-            HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
+           // HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
 
             
         }
@@ -257,7 +257,7 @@ sdc_prch_rly_is_closed                = %.0lf \n\r"\
             charge_temp = hvcb_hvb_rx_t_cell_hvb_t_cell_max_decode(t_cell.hvb_t_cell_max);
 
             sprintf(buffer, "charging temp = %.2lf\n\r", charge_temp);
-            HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
+           // HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
 
         }
 
@@ -274,7 +274,7 @@ sdc_prch_rly_is_closed                = %.0lf \n\r"\
             SOC = hvcb_hvb_rx_soc_hvb_r_so_c_hvb_u_cell_min_decode(SOC_struct_rx.hvb_r_so_c_hvb_u_cell_min);
 
             sprintf(buffer, "SOC = %.2lf\n\r", (SOC*0.04 + 50));
-            HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
+          //  HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
 
 
         }
@@ -339,7 +339,7 @@ tsal_green_is_active                     =   %.0lf\n\r ",                       
                                                                                    imp_hv_relays_signals_is_active         ,\
                                                                                    tsal_green_is_active                    );
 
-            HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
+           // HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
 
 
         }
@@ -609,9 +609,9 @@ void AIR_CAN_Cmd_On(){
     double static AIR_Cmd_On = 1;
 
     AIR_Cmd.vcu_b_hvb_inv_req = hvcb_hvb_tx_vcu_cmd_vcu_b_hvb_inv_req_encode(AIR_Cmd_On);
-    AIR_Cmd.vcu_clr_err       = hvcb_hvb_tx_vcu_cmd_vcu_clr_err_encode(vcu_clr_err);
-    AIR_Cmd.vcu_b_bal_req     = hvcb_hvb_tx_vcu_cmd_vcu_b_bal_req_encode(vcu_b_bal_req);
-    AIR_Cmd.vcu_b_all_vt_req  = hvcb_hvb_tx_vcu_cmd_vcu_b_all_vt_req_encode(vcu_b_all_vt_req);
+    AIR_Cmd.vcu_clr_err       = hvcb_hvb_tx_vcu_cmd_vcu_clr_err_encode(0);
+    AIR_Cmd.vcu_b_bal_req     = hvcb_hvb_tx_vcu_cmd_vcu_b_bal_req_encode(1);
+    AIR_Cmd.vcu_b_all_vt_req  = hvcb_hvb_tx_vcu_cmd_vcu_b_all_vt_req_encode(1);
 
     hvcb_hvb_tx_vcu_cmd_pack((uint8_t *) &buffer_tx, &AIR_Cmd, HVCB_HVB_TX_VCU_CMD_LENGTH);
 
@@ -638,9 +638,9 @@ void AIR_CAN_Cmd_Off(){
     double static AIR_Cmd_Off = 0;
 
     AIR_Cmd.vcu_b_hvb_inv_req = hvcb_hvb_tx_vcu_cmd_vcu_b_hvb_inv_req_encode(AIR_Cmd_Off);
-    AIR_Cmd.vcu_clr_err       = hvcb_hvb_tx_vcu_cmd_vcu_clr_err_encode(vcu_clr_err);
-    AIR_Cmd.vcu_b_bal_req     = hvcb_hvb_tx_vcu_cmd_vcu_b_bal_req_encode(vcu_b_bal_req);
-    AIR_Cmd.vcu_b_all_vt_req  = hvcb_hvb_tx_vcu_cmd_vcu_b_all_vt_req_encode(vcu_b_all_vt_req);
+    AIR_Cmd.vcu_clr_err       = hvcb_hvb_tx_vcu_cmd_vcu_clr_err_encode(0);
+    AIR_Cmd.vcu_b_bal_req     = hvcb_hvb_tx_vcu_cmd_vcu_b_bal_req_encode(0);
+    AIR_Cmd.vcu_b_all_vt_req  = hvcb_hvb_tx_vcu_cmd_vcu_b_all_vt_req_encode(1);
 
     hvcb_hvb_tx_vcu_cmd_pack((uint8_t *) &buffer_tx, &AIR_Cmd, HVCB_HVB_TX_VCU_CMD_LENGTH);
 
@@ -659,49 +659,49 @@ void AIR_CAN_Cmd_Off(){
 
 void can_WD_setting(){
 
-    SW_Watchdog_typedef HVCB_HVB_RX_V_CELL_FRAME;
+    SW_Watchdog_Typedef HVCB_HVB_RX_V_CELL_FRAME;
 
     strcat(HVCB_HVB_RX_V_CELL_FRAME.name, "HVCB_HVB_RX_V_CELL_FRAME");
     HVCB_HVB_RX_V_CELL_FRAME.index         = 0;
     HVCB_HVB_RX_V_CELL_FRAME.cycle_time    = HVCB_HVB_RX_V_CELL_CYCLE_TIME_MS;
     HVCB_HVB_RX_V_CELL_FRAME.watchdog_time = HVCB_HVB_RX_V_CELL_CYCLE_TIME_MS * 5;
 
-    SW_Watchdog_typedef HVCB_HVB_TX_VCU_CMD_FRAME;
+   //SW_Watchdog_Typedef HVCB_HVB_TX_VCU_CMD_FRAME;
 
-    strcat(HVCB_HVB_TX_VCU_CMD_FRAME.name, "HVCB_HVB_TX_VCU_CMD_FRAME");
-    HVCB_HVB_TX_VCU_CMD_FRAME.index         = 1;
-    HVCB_HVB_TX_VCU_CMD_FRAME.cycle_time    = HVCB_HVB_TX_VCU_CMD_CYCLE_TIME_MS;
-    HVCB_HVB_TX_VCU_CMD_FRAME.watchdog_time = HVCB_HVB_TX_VCU_CMD_CYCLE_TIME_MS * 5;
+   //strcat(HVCB_HVB_TX_VCU_CMD_FRAME.name, "HVCB_HVB_TX_VCU_CMD_FRAME");
+   //HVCB_HVB_TX_VCU_CMD_FRAME.index         = 1;
+   //HVCB_HVB_TX_VCU_CMD_FRAME.cycle_time    = HVCB_HVB_TX_VCU_CMD_CYCLE_TIME_MS;
+   //HVCB_HVB_TX_VCU_CMD_FRAME.watchdog_time = HVCB_HVB_TX_VCU_CMD_CYCLE_TIME_MS * 5;
 
-    SW_Watchdog_typedef HVCB_HVB_RX_T_CELL_FRAME;
+    SW_Watchdog_Typedef HVCB_HVB_RX_T_CELL_FRAME;
 
     strcat(HVCB_HVB_RX_T_CELL_FRAME.name, "HVCB_HVB_RX_T_CELL_FRAME");
     HVCB_HVB_RX_T_CELL_FRAME.index         = 2;
     HVCB_HVB_RX_T_CELL_FRAME.cycle_time    = HVCB_HVB_RX_T_CELL_CYCLE_TIME_MS;
     HVCB_HVB_RX_T_CELL_FRAME.watchdog_time = HVCB_HVB_RX_T_CELL_CYCLE_TIME_MS * 5;
 
-    SW_Watchdog_typedef HVCB_HVB_RX_SOC_FRAME;
+    SW_Watchdog_Typedef HVCB_HVB_RX_SOC_FRAME;
 
     strcat(HVCB_HVB_RX_SOC_FRAME.name, "HVCB_HVB_RX_SOC_FRAME");
     HVCB_HVB_RX_SOC_FRAME.index         = 3;
     HVCB_HVB_RX_SOC_FRAME.cycle_time    = HVCB_HVB_RX_SOC_CYCLE_TIME_MS;
     HVCB_HVB_RX_SOC_FRAME.watchdog_time = HVCB_HVB_RX_SOC_CYCLE_TIME_MS * 5;
 
-    SW_Watchdog_typedef NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME;
+   // SW_Watchdog_Typedef NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME;
 
-    strcat(NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME.name, "NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME");
-    NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME.index         = 4;
-    NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME.cycle_time    = 100;
-    NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME.watchdog_time = 100 * 5;
+   // strcat(NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME.name, "NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME");
+  //  NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME.index         = 4;
+  //  NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME.cycle_time    = 100;
+  //  NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME.watchdog_time = 100 * 5;
 
-    SW_Watchdog_typedef MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME;
+    SW_Watchdog_Typedef MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME;
 
     strcat(MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME.name, "MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME");
     MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME.index         = 5;
     MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME.cycle_time    = MCB_TLB_BAT_SD_CSENSING_STATUS_CYCLE_TIME_MS;
     MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME.watchdog_time = MCB_TLB_BAT_SD_CSENSING_STATUS_CYCLE_TIME_MS * 5; 
 
-    SW_Watchdog_typedef MCB_TLB_BAT_SIGNALS_STATUS_FRAME;
+    SW_Watchdog_Typedef MCB_TLB_BAT_SIGNALS_STATUS_FRAME;
 
     strcat(MCB_TLB_BAT_SIGNALS_STATUS_FRAME.name, "MCB_TLB_BAT_SIGNALS_STATUS_FRAME");
     MCB_TLB_BAT_SIGNALS_STATUS_FRAME.index         = 6;
@@ -710,10 +710,10 @@ void can_WD_setting(){
 
 
    SW_Watchdog_set(&HVCB_HVB_RX_V_CELL_FRAME);
-   SW_Watchdog_set(&HVCB_HVB_TX_VCU_CMD_FRAME);
+   //SW_Watchdog_set(&HVCB_HVB_TX_VCU_CMD_FRAME);
    SW_Watchdog_set(&HVCB_HVB_RX_T_CELL_FRAME);
    SW_Watchdog_set(&HVCB_HVB_RX_SOC_FRAME);
-   SW_Watchdog_set(&NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME);
+  // SW_Watchdog_set(&NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME);
    SW_Watchdog_set(&MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME);
    SW_Watchdog_set(&MCB_TLB_BAT_SIGNALS_STATUS_FRAME);
 
@@ -724,10 +724,10 @@ void can_WD_setting(){
 void can_WD_start(){
 
     SW_Watchdog_start("HVCB_HVB_RX_V_CELL_FRAME");
-    SW_Watchdog_start("HVCB_HVB_TX_VCU_CMD_FRAME");
+  //  SW_Watchdog_start("HVCB_HVB_TX_VCU_CMD_FRAME");
     SW_Watchdog_start("HVCB_HVB_RX_T_CELL_FRAME");
     SW_Watchdog_start("HVCB_HVB_RX_SOC_FRAME");
-    SW_Watchdog_start("NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME");
+  //  SW_Watchdog_start("NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME");
     SW_Watchdog_start("MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME");
     SW_Watchdog_start("MCB_TLB_BAT_SIGNALS_STATUS_FRAME");
 

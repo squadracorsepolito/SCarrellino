@@ -17,7 +17,7 @@
 
 uint16_t get_resistance(uint16_t ntc_value){
     float ntc_voltage = ADC_Val*(ntc_value/(pow(2,adc_conv_bt)));
-    float resistance = (ntc_voltage*Rpu)/(Val-ntc_voltage);
+    float resistance = (ntc_voltage*Rpu)/(Val-ntc_voltage) + 3000;
 
     return resistance;
 };

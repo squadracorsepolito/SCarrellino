@@ -9,21 +9,21 @@
 uint8_t             number_of_Watchdog = 0;
 
 
-SW_Watchdog_typedef WD_struct[number_of_struct];
+SW_Watchdog_Typedef WD_struct[number_of_struct];
 
 uint64_t            time[number_of_struct];
 bool                index_error[number_of_struct] = {0};
 
 
 //add a watchdog
-void SW_Watchdog_set(SW_Watchdog_typedef *info_struct)
+void SW_Watchdog_set(SW_Watchdog_Typedef *info_struct)
 {
 
     
-    WD_struct[number_of_Watchdog].cycle_time = &info_struct->cycle_time;
+    WD_struct[number_of_Watchdog].cycle_time = (uint32_t ) &info_struct->cycle_time;
     WD_struct[number_of_Watchdog].index = number_of_Watchdog;
-    strcat(WD_struct[number_of_Watchdog].name, &info_struct->name);
-    WD_struct[number_of_Watchdog].watchdog_time = &info_struct->watchdog_time;
+    strcat(WD_struct[number_of_Watchdog].name, info_struct->name);
+    WD_struct[number_of_Watchdog].watchdog_time = (uint32_t ) &info_struct->watchdog_time;
 
     
     number_of_Watchdog ++;
@@ -31,7 +31,7 @@ void SW_Watchdog_set(SW_Watchdog_typedef *info_struct)
 }
 
 //starts the watchdog
-void SW_Watchdog_start(char info_struct_name){
+void SW_Watchdog_start(char *info_struct_name){
     
     for (uint8_t i = 0; i<number_of_Watchdog; i++){
         if(WD_struct[i].name == info_struct_name) time[i] = HAL_GetTick();
@@ -59,7 +59,7 @@ HAL_StatusTypeDef SW_Wachdog_routine(){
 }
 
 //refreshes the watchdog
-void SW_Wachdog_Refresh(char info_struct_name){
+void SW_Wachdog_Refresh(char *info_struct_name){
 
     for (uint8_t i = 0; i<number_of_Watchdog; i++){
         if(WD_struct[i].name == info_struct_name) time[i] = HAL_GetTick();
