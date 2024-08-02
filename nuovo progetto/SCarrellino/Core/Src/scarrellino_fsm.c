@@ -18,6 +18,7 @@
 #include "ECU_level_functions.h"
 #include "can_functions.h"
 #include "tim.h"
+#include "ntc.h"
 
 #ifndef __weak
 #define __weak __attribute__((weak))
@@ -28,8 +29,9 @@ double extern charge_temp;
 
 bool volatile AIR_CAN_Cmd = 0;
 
+extern uint8_t volatile error_code;
 
-
+#define CHG_EN_REQ 0U
 //tlb sdc signals
 double sdc_tsac_initial_in_is_active = 0, 
        sdc_post_ams_imd_relay_is_active = 0, 
@@ -56,28 +58,28 @@ double   air_neg_cmd_is_active                   ,
          air_pos_cmd_is_active                   ,                 
          air_pos_is_closed                       ,
          air_pos_stg_mech_state_signal_is_active ,
-         ams_err_is_active                       ,
+         ams_err_is_active                       = 1,
          dcbus_is_over60_v                       ,
          dcbus_prech_rly_cmd_is_active           ,
          dcbus_prech_rly_is_closed               ,
-         imd_err_is_active                       ,
+         imd_err_is_active                       = 1,
          imp_ai_rs_signals_is_active             ,
-         imp_any_is_active                       ,
+         imp_any_is_active                       = 1,
          imp_hv_relays_signals_is_active         ,
          tsal_green_is_active                    ; 
 
 
+extern volatile uint8_t ntc_temp;
+extern volatile uint16_t ntc_value;
+
          
 FSM_callback_function run_callback_1(){
-
-display_routine();
-IMD_AMS_error_handler();
-buzzer_routine();
 
     return 0;
 }
 
 FSM_callback_function transition_callback_1(){
+
     return 0;
 }
 
@@ -154,47 +156,69 @@ uint32_t _FSM_SCARRELLINO_FSM_IDLE_event_handle(uint8_t event) {
 /** @brief wrapper of FSM_SCARRELLINO_FSM_do_work, with exit state checking */
 uint32_t _FSM_SCARRELLINO_FSM_IDLE_do_work() {
     
-    can_rx_routine();
-
    // bool volatile prova     = ChargeEN;
    // bool volatile prova_sdc = SDC_FUNGO;
 
     uint32_t next;
 
-    if (ChargeEN == 0){ 
-        if( (sdc_tsac_initial_in_is_active              == 1) &
-            (sdc_tsac_final_in_is_active                == 1) &
-            (sdc_post_ams_imd_relay_is_active           == 1) &
-            (sdc_prch_rly_is_closed                     == 0) &
-            (air_neg_cmd_is_active                      == 0) &
-            (air_neg_is_closed                          == 0) &
-            (air_neg_stg_mech_state_signal_is_active    == 0) &
-            (air_pos_cmd_is_active                      == 0) &
-            (air_pos_is_closed                          == 0) &
-            (air_pos_stg_mech_state_signal_is_active    == 0) &
-            (ams_err_is_active                          == 0) &
-            (dcbus_is_over60_v                          == 0) &
-            (dcbus_prech_rly_cmd_is_active              == 0) &
-            (dcbus_prech_rly_is_closed                  == 0) &
-            (imd_err_is_active                          == 0) &
-            (imp_ai_rs_signals_is_active                == 0) &
-            (imp_any_is_active                          == 0) &
-            (imp_hv_relays_signals_is_active            == 0) &
-            (tsal_green_is_active                       == 1) &
-            (charge_temp                                < 60) &
-            (SDC_FUNGO                                  == 1) &  //metti a 1
-            (ChargeEN                                   == 0) )
+    extern bool first_run;
+
+    if (first_run == 1){
+        if (ChargeEN != CHG_EN_REQ){
+            first_run = 0;
+        }
+    }
+
+    else{
+
+    if (ChargeEN == CHG_EN_REQ){ 
+        if( 
+            #ifdef debug
+            (sdc_tsac_initial_in_is_active              == 0) &&
+            (sdc_tsac_final_in_is_active                == 0) &&
+            (sdc_post_ams_imd_relay_is_active           == 0) &&
+            (ams_err_is_active                          == 1) &&
+            (imd_err_is_active                          == 1) &&
+            (tsal_green_is_active                       == 0) &&
+            (imp_any_is_active                          == 1) &&
+            #else
+            (sdc_tsac_initial_in_is_active              == 1) &&
+            (sdc_tsac_final_in_is_active                == 1) &&
+            (sdc_post_ams_imd_relay_is_active           == 1) &&
+            (ams_err_is_active                          == 0) &&
+            (imd_err_is_active                          == 0) &&
+            (tsal_green_is_active                       == 1) &&
+            (imp_any_is_active                          == 0) &&
+            #endif
+            //(sdc_prch_rly_is_closed                     == 0) && // condition not important
+            (air_neg_cmd_is_active                      == 0) &&
+            (air_neg_is_closed                          == 0) &&
+            (air_neg_stg_mech_state_signal_is_active    == 0) &&
+            (air_pos_cmd_is_active                      == 0) &&
+            (air_pos_is_closed                          == 0) &&
+            (air_pos_stg_mech_state_signal_is_active    == 0) &&
+            (dcbus_is_over60_v                          == 0) &&
+            (dcbus_prech_rly_cmd_is_active              == 0) &&
+            (dcbus_prech_rly_is_closed                  == 0) &&
+            (imp_ai_rs_signals_is_active                == 0) &&
+            (imp_hv_relays_signals_is_active            == 0) &&
+            (charge_temp                                < 60) &&
+          //  (error_code                                == 30) &&
+            (SDC_FUNGO                                  == SDC_active) &&  //TODO: remove this
+            (ChargeEN                                   == CHG_EN_REQ) )
            {
 
             next = FSM_SCARRELLINO_FSM_CHARGE;
            }
+
+           else{
+                next = FSM_SCARRELLINO_FSM_IDLE;
+                }
         
+    }
     }
 
-    else{
-        next = FSM_SCARRELLINO_FSM_IDLE;
-        
-    }
+    
 
     switch (next) {
     case FSM_SCARRELLINO_FSM_IDLE:
@@ -220,7 +244,7 @@ uint32_t _FSM_SCARRELLINO_FSM_CHARGE_event_handle(uint8_t event) {
 
 
 void FSM_SCARRELLINO_FSM_CHARGE_entry() {
-    ChargeBlueLedOn;
+    //ChargeBlueLedOn;
     buzzer_charge_on = 1;
     AIR_CAN_Cmd = 1;
 }
@@ -230,33 +254,46 @@ void FSM_SCARRELLINO_FSM_CHARGE_entry() {
 uint32_t _FSM_SCARRELLINO_FSM_CHARGE_do_work() {
     uint32_t next;
 
-    can_rx_routine();
     TSAC_FAN_Handler();
 
 
-        if( (sdc_tsac_initial_in_is_active              == 1) &
-            (sdc_tsac_final_in_is_active                == 1) &
-            (sdc_post_ams_imd_relay_is_active           == 1) &
-            (ams_err_is_active                          == 0) &
-            (imd_err_is_active                          == 0) &
-            (imp_ai_rs_signals_is_active                == 0) &
-            (imp_any_is_active                          == 0) &
-            (charge_temp                                < 60) &
-            (imp_hv_relays_signals_is_active            == 0) &
-            (SDC_FUNGO                                  == 1) &  //metti a 1
-            (ChargeEN                                   == 0) )
+        if( (imp_ai_rs_signals_is_active                == 0) &&
+            //(error_code                                == 30) &&
+            (charge_temp                                < 60) &&
+            (imp_hv_relays_signals_is_active            == 0) &&
+            (SDC_FUNGO                                  == SDC_active)&&
+            #ifdef debug
+            (sdc_tsac_initial_in_is_active              == 0) &&
+            (sdc_tsac_final_in_is_active                == 0) &&
+            (sdc_post_ams_imd_relay_is_active           == 0) &&
+            (imp_any_is_active                          == 1) &&
+            (ams_err_is_active                          == 1) &&
+            (imd_err_is_active                          == 1) &&
+            #else
+            (sdc_tsac_initial_in_is_active              == 1) &&
+            (sdc_tsac_final_in_is_active                == 1) &&
+            (sdc_post_ams_imd_relay_is_active           == 1) &&
+            (imp_any_is_active                          == 0) &&
+            (ams_err_is_active                          == 0) &&
+            (imd_err_is_active                          == 0) &&
+            #endif
+            (ChargeEN                                   == CHG_EN_REQ) )
                
-           
            {
-        
-        if ((air_neg_is_closed == 1) & (air_neg_cmd_is_active == 1)){
+                 #ifdef debug
 
-            HAL_TIM_OC_Start_IT(&htim7, TIM_CHANNEL_ALL);
+                 start_charge_delay();
 
-        }
+                 #else
+                 if ((air_neg_is_closed == 1) && (air_neg_cmd_is_active == 1) && (air_pos_is_closed == 1) && (air_pos_cmd_is_active == 1) && (tsal_green_is_active == 0)){
+
+                     start_charge_delay();
+
+                 }
+                 #endif
 
 
-        next = FSM_SCARRELLINO_FSM_CHARGE;
+                 next = FSM_SCARRELLINO_FSM_CHARGE;
            }
 
     else{
@@ -291,11 +328,8 @@ uint32_t _FSM_SCARRELLINO_FSM_STOP_CHARGE_event_handle(uint8_t event) {
 /** @brief wrapper of FSM_SCARRELLINO_FSM_do_work, with exit state checking */
 uint32_t _FSM_SCARRELLINO_FSM_STOP_CHARGE_do_work() {
     
-    ChargeENcmdOFF;
-    TSAC_fan_off;
-    ChargeBlueLedOff;
-    buzzer_stop_charge_on = 1;
-    AIR_CAN_Cmd = 0;
+    stop_charge_routine();
+    
 
     uint32_t next = FSM_SCARRELLINO_FSM_DONE;
 

@@ -15,6 +15,7 @@ CAN high level functions
 #include "interrupt.h"
 #include "nlg5_database_can.h"
 #include "SW_Watchdog.h"
+#include "ECU_level_functions.h"
 
 //wait for the CAN Tx to be ready
 HAL_StatusTypeDef can_wait(CAN_HandleTypeDef *hcan, uint8_t timeout) {
@@ -101,12 +102,8 @@ extern volatile bool                     can_rx_flag;
 
 extern uint8_t                           RxData;
 
-struct mcb_tlb_bat_sd_csensing_status_t  tlb_scd_rx;
 extern CAN_RxHeaderTypeDef               RxHeader;
-struct hvcb_hvb_rx_v_cell_t              v_cell_rx;
-struct nlg5_database_can_nlg5_act_i_t    brusa_rx_voltage;
-struct hvcb_hvb_rx_t_cell_t              t_cell;
-struct hvcb_hvb_rx_soc_t                 SOC_struct_rx;
+
 
 
 
@@ -129,16 +126,20 @@ double charge_temp;
 double SOC = -50/0.04;
 
 
-double vcu_clr_err,
-       vcu_b_bal_req,
-       vcu_b_all_vt_req;
+double hvb_diag_imd_low_r = 1,
+       hvb_recovery_active = 1,
+       hvb_diag_imd_sna    = 1 ;
+       
+       
 
 
 
 
 extern can_message can_buffer[can_message_rx_number];
-extern can_message can_buffer_brusa;
 
+#ifdef BRUSA_on
+extern can_message can_buffer_brusa;
+#endif
 
 
 char buffer[1200] = {0};
@@ -159,214 +160,26 @@ void can_rx_routine(void){
 
     if (can_rx_flag == 1){
         
-        //HAL_UART_Transmit(&LOG_UART, (uint8_t *)"messaggio ricevuto: \n\r", strlen("messaggio ricevuto: \n\r"),100);
 
+        //if there is no data to store the flag gets cleared
+        if((can_buffer[0].data_present == 0) && (can_buffer[1].data_present == 0) && (can_buffer[5].data_present == 0) && \
+           (can_buffer[2].data_present == 0) && (can_buffer[3].data_present == 0) && (can_buffer[4].data_present == 0)) can_rx_flag = 0;
 
-        if((can_buffer[0].data_present == 0) & (can_buffer[1].data_present == 0) & (can_buffer[5].data_present == 0) & \
-           (can_buffer[2].data_present == 0) & (can_buffer[3].data_present == 0) & (can_buffer[4].data_present == 0) & (can_buffer_brusa.data_present == 0) ) can_rx_flag = 0;
 
+        #ifdef BRUSA_on
+        BRUSA_CAN_data_storage();
+        #endif
 
+        HV_BMS1_CAN_data_storage();
+        HV_BMS2_CAN_data_storage();
+        HV_BMS3_CAN_data_storage();
+        TLB_Battery_signals_CAN_data_storage();
+        TLB_Battery_SDC_CAN_data_storage();
 
-        //TLB BATTERY
-        if(can_buffer[1].data_present == 1){
-
-        SW_Wachdog_Refresh("MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME");
-        
-        can_buffer[1].data_present = 0;
-
-        mcb_tlb_bat_sd_csensing_status_init(&tlb_scd_rx);
-        mcb_tlb_bat_sd_csensing_status_unpack(&tlb_scd_rx,(uint8_t *) &can_buffer[1].data, MCB_TLB_BAT_SD_CSENSING_STATUS_LENGTH);
-
-        
-
-        sdc_tsac_initial_in_is_active = mcb_tlb_bat_sd_csensing_status_sdc_tsac_initial_in_is_active_decode(tlb_scd_rx.sdc_tsac_initial_in_is_active);
-        sdc_post_ams_imd_relay_is_active = mcb_tlb_bat_sd_csensing_status_sdc_post_ams_imd_relay_is_active_decode(tlb_scd_rx.sdc_post_ams_imd_relay_is_active);
-        sdc_tsac_final_in_is_active = mcb_tlb_bat_sd_csensing_status_sdc_tsac_final_in_is_active_decode(tlb_scd_rx.sdc_tsac_final_in_is_active);
-        sdc_prch_rly_is_closed = mcb_tlb_bat_sd_csensing_status_sdc_prch_rly_is_closed_decode(tlb_scd_rx.sdc_prch_rly_is_closed);
-        
-
-        
-
-        sprintf(buffer, "sdc_tsac_initial_in_is_active      = %.0lf\n\r\
-sdc_post_ams_imd_relay_is_active      = %.0lf \n\r\
-sdc_tsac_final_in_is_active           = %.0lf \n\r\
-sdc_prch_rly_is_closed                = %.0lf \n\r"\
-                                                                ,sdc_tsac_initial_in_is_active ,          \
-                                                                 sdc_post_ams_imd_relay_is_active,             \
-                                                                 sdc_tsac_final_in_is_active,        \
-                                                                 sdc_prch_rly_is_closed);
-       // HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
-
-    
-        }
-
-        // PODIUM HV BMS voltage
-        if (can_buffer[0].data_present == 1){
-
-            SW_Wachdog_Refresh("HVCB_HVB_RX_V_CELL_FRAME");
-
-            can_buffer[0].data_present = 0;
-
-            hvcb_hvb_rx_v_cell_init(&v_cell_rx);
-            hvcb_hvb_rx_v_cell_unpack(&v_cell_rx,(uint8_t *) &can_buffer[0].data, HVCB_HVB_RX_V_CELL_LENGTH);
-
-            v_max_id_rx = hvcb_hvb_rx_v_cell_hvb_idx_cell_u_max_decode(v_cell_rx.hvb_idx_cell_u_max);
-            v_min_id_rx = hvcb_hvb_rx_v_cell_hvb_idx_cell_u_min_decode(v_cell_rx.hvb_idx_cell_u_min);
-            v_max_rx    = hvcb_hvb_rx_v_cell_hvb_u_cell_max_decode (v_cell_rx.hvb_u_cell_max);
-            v_min_rx     = hvcb_hvb_rx_v_cell_hvb_u_cell_min_decode(v_cell_rx.hvb_u_cell_min);
-            v_mean_rx    = hvcb_hvb_rx_v_cell_hvb_u_cell_mean_decode(v_cell_rx.hvb_u_cell_mean);
-
-
-            sprintf(buffer, "v max id = %.0f \n\rv min id = %.0f \n\rv max = %.2f \n\rv min = %.2f \n\rv mean = %.2f \n\r", v_max_id_rx, v_min_id_rx, v_max_rx, v_min_rx, v_mean_rx);
-            //HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
-
-        }
-
-
-        //BRUSA voltage
-        if(can_buffer_brusa.data_present == 1){
-
-            SW_Wachdog_Refresh("NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME");
-
-            
-            can_buffer_brusa.data_present = 0;
-
-            memset(&brusa_rx_voltage, 0, sizeof(brusa_rx_voltage));
-            nlg5_database_can_nlg5_act_i_unpack(&brusa_rx_voltage,(uint8_t *) &can_buffer_brusa.data, NLG5_DATABASE_CAN_NLG5_ACT_I_LENGTH);
-
-            mains_i_rx = nlg5_database_can_nlg5_act_i_nlg5_mc_act_decode(brusa_rx_voltage.nlg5_mc_act);
-            mains_v_rx = nlg5_database_can_nlg5_act_i_nlg5_mv_act_decode(brusa_rx_voltage.nlg5_mv_act);
-            V_out_rx   = nlg5_database_can_nlg5_act_i_nlg5_ov_act_decode(brusa_rx_voltage.nlg5_ov_act);
-            I_out_rx   = nlg5_database_can_nlg5_act_i_nlg5_oc_act_decode(brusa_rx_voltage.nlg5_oc_act);
-
-            sprintf(buffer, "V = %.2lf\n\rI = %.2lf\n\r", V_out_rx, I_out_rx);
-           // HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
-
-            
-        }
-
-        // PODIUM HV BMS temp
-        if (can_buffer[2].data_present == 1){
-
-           SW_Wachdog_Refresh("HVCB_HVB_RX_T_CELL_FRAME");
-            can_buffer[2].data_present = 0;
-
-            hvcb_hvb_rx_t_cell_init(&t_cell);
-            hvcb_hvb_rx_t_cell_unpack(&t_cell, (uint8_t *) &can_buffer[2].data, HVCB_HVB_RX_T_CELL_LENGTH);
-
-            charge_temp = hvcb_hvb_rx_t_cell_hvb_t_cell_max_decode(t_cell.hvb_t_cell_max);
-
-            sprintf(buffer, "charging temp = %.2lf\n\r", charge_temp);
-           // HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
-
-        }
-
-        //PODIUM HV BMS state of charge
-        if(can_buffer[3].data_present == 1){
-
-            SW_Wachdog_Refresh("HVCB_HVB_RX_SOC_FRAME");
-
-            can_buffer[3].data_present = 0;
-
-            hvcb_hvb_rx_soc_init(&SOC_struct_rx);
-            hvcb_hvb_rx_soc_unpack(&SOC_struct_rx, (uint8_t* ) &can_buffer[3].data, HVCB_HVB_RX_SOC_LENGTH);
-
-            SOC = hvcb_hvb_rx_soc_hvb_r_so_c_hvb_u_cell_min_decode(SOC_struct_rx.hvb_r_so_c_hvb_u_cell_min);
-
-            sprintf(buffer, "SOC = %.2lf\n\r", (SOC*0.04 + 50));
-          //  HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
-
-
-        }
-
-
-        if(can_buffer[4].data_present == 1){
-
-            SW_Wachdog_Refresh("MCB_TLB_BAT_SIGNALS_STATUS_FRAME");
-
-
-            can_buffer[4].data_present = 0;
-
-            struct mcb_tlb_bat_signals_status_t static tlb_signals;
-
-            mcb_tlb_bat_signals_status_init(&tlb_signals);
-            mcb_tlb_bat_signals_status_unpack(&tlb_signals,(uint8_t* ) &can_buffer[4].data,MCB_TLB_BAT_SIGNALS_STATUS_LENGTH);
-
-            air_neg_cmd_is_active                      = mcb_tlb_bat_signals_status_air_neg_cmd_is_active_decode(tlb_signals.air_neg_cmd_is_active); 
-            air_neg_is_closed                          = mcb_tlb_bat_signals_status_air_neg_is_closed_decode(tlb_signals.air_neg_is_closed);
-            air_neg_stg_mech_state_signal_is_active    = mcb_tlb_bat_signals_status_air_neg_stg_mech_state_signal_is_active_decode(tlb_signals.air_neg_stg_mech_state_signal_is_active);
-            air_pos_cmd_is_active                      = mcb_tlb_bat_signals_status_air_pos_cmd_is_active_decode(tlb_signals.air_pos_cmd_is_active);
-            air_pos_is_closed                          = mcb_tlb_bat_signals_status_air_pos_is_closed_decode(tlb_signals.air_pos_is_closed);
-            air_pos_stg_mech_state_signal_is_active    = mcb_tlb_bat_signals_status_air_pos_stg_mech_state_signal_is_active_decode(tlb_signals.air_pos_stg_mech_state_signal_is_active);
-            ams_err_is_active                          = mcb_tlb_bat_signals_status_ams_err_is_active_decode(tlb_signals.ams_err_is_active);
-            dcbus_is_over60_v                          = mcb_tlb_bat_signals_status_dcbus_is_over60_v_decode(tlb_signals.dcbus_is_over60_v);
-            dcbus_prech_rly_cmd_is_active              = mcb_tlb_bat_signals_status_dcbus_prech_rly_cmd_is_active_decode(tlb_signals.dcbus_prech_rly_cmd_is_active);
-            dcbus_prech_rly_is_closed                  = mcb_tlb_bat_signals_status_dcbus_prech_rly_is_closed_decode(tlb_signals.dcbus_prech_rly_is_closed);
-            imd_err_is_active                          = mcb_tlb_bat_signals_status_imd_err_is_active_decode(tlb_signals.imd_err_is_active);
-            imp_ai_rs_signals_is_active                = mcb_tlb_bat_signals_status_imp_ai_rs_signals_is_active_decode(tlb_signals.imp_ai_rs_signals_is_active);
-            imp_any_is_active                          = mcb_tlb_bat_signals_status_imp_any_is_active_decode(tlb_signals.imp_any_is_active);
-            imp_hv_relays_signals_is_active            = mcb_tlb_bat_signals_status_imp_hv_relays_signals_is_active_decode(tlb_signals.imp_hv_relays_signals_is_active);
-            tsal_green_is_active                       = mcb_tlb_bat_signals_status_tsal_green_is_active_decode(tlb_signals.tsal_green_is_active);
-
-
-            sprintf(buffer,"air_neg_cmd_is_active                    =   %.0lf,\n\r\
-air_neg_is_closed                        =   %.0lf,\n\r\
-air_neg_stg_mech_state_signal_is_active  =   %.0lf,\n\r\
-air_pos_cmd_is_active                    =   %.0lf,\n\r\
-air_pos_is_closed                        =   %.0lf,\n\r\
-air_pos_stg_mech_state_signal_is_active  =   %.0lf,\n\r\
-ams_err_is_active                        =   %.0lf,\n\r\
-dcbus_is_over60_v                        =   %.0lf,\n\r\
-dcbus_prech_rly_cmd_is_active            =   %.0lf,\n\r\
-dcbus_prech_rly_is_closed                =   %.0lf,\n\r\
-imd_err_is_active                        =   %.0lf,\n\r\
-imp_ai_rs_signals_is_active              =   %.0lf,\n\r\
-imp_any_is_active                        =   %.0lf,\n\r\
-imp_hv_relays_signals_is_active          =   %.0lf,\n\r\
-tsal_green_is_active                     =   %.0lf\n\r ",                          air_neg_cmd_is_active                   ,\
-                                                                                   air_neg_is_closed                       ,\
-                                                                                   air_neg_stg_mech_state_signal_is_active ,\
-                                                                                   air_pos_cmd_is_active                   ,\
-                                                                                   air_pos_is_closed                       ,\
-                                                                                   air_pos_stg_mech_state_signal_is_active ,\
-                                                                                   ams_err_is_active                       ,\
-                                                                                   dcbus_is_over60_v                       ,\
-                                                                                   dcbus_prech_rly_cmd_is_active           ,\
-                                                                                   dcbus_prech_rly_is_closed               ,\
-                                                                                   imd_err_is_active                       ,\
-                                                                                   imp_ai_rs_signals_is_active             ,\
-                                                                                   imp_any_is_active                       ,\
-                                                                                   imp_hv_relays_signals_is_active         ,\
-                                                                                   tsal_green_is_active                    );
-
-           // HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
-
-
-        }
-
-
-        if(can_buffer[5].data_present == 1){
-
-            SW_Wachdog_Refresh("HVCB_HVB_TX_VCU_CMD_FRAME");
-
-            can_buffer[5].data_present = 0;
-
-            struct hvcb_hvb_tx_vcu_cmd_t static AIR_Cmd;
-
-            hvcb_hvb_tx_vcu_cmd_init(&AIR_Cmd);
-
-            hvcb_hvb_tx_vcu_cmd_unpack(&AIR_Cmd,(uint8_t* ) can_buffer[5].data, HVCB_HVB_TX_VCU_CMD_LENGTH);
-
-
-            vcu_b_all_vt_req = hvcb_hvb_tx_vcu_cmd_vcu_b_all_vt_req_decode(AIR_Cmd.vcu_b_all_vt_req);
-            vcu_b_bal_req    =  hvcb_hvb_tx_vcu_cmd_vcu_b_bal_req_decode(AIR_Cmd.vcu_b_bal_req);
-            vcu_clr_err      =  hvcb_hvb_tx_vcu_cmd_vcu_clr_err_decode(AIR_Cmd.vcu_clr_err);
-            
-
-
-    }
+ 
 }
 }
+
 
 
 
@@ -398,12 +211,12 @@ tlb_shut.sdc_tsac_final_in_is_active            = mcb_tlb_bat_sd_csensing_status
 tlb_shut.sdc_prch_rly_is_closed                = mcb_tlb_bat_sd_csensing_status_sdc_prch_rly_is_closed_encode(sdc_prch_rly_is_closed);
 
 
-mcb_tlb_bat_sd_csensing_status_pack((uint8_t *)&buffer_tx, &tlb_shut, sizeof(buffer_tx));
+mcb_tlb_bat_sd_csensing_status_pack((uint8_t *)&buffer_tx, &tlb_shut, MCB_TLB_BAT_SD_CSENSING_STATUS_LENGTH);
 
 
 
 // impostazioni e Tx can
-TxHeader.DLC = sizeof(buffer_tx);
+TxHeader.DLC = MCB_TLB_BAT_SD_CSENSING_STATUS_LENGTH;
 TxHeader.IDE = CAN_ID_STD;
 TxHeader.StdId = MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME_ID;
 TxHeader.ExtId = 0;
@@ -412,11 +225,11 @@ TxHeader.TransmitGlobalTime = DISABLE;
 
 
 
-if(can_send(&hcan2,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX2) != HAL_OK) Error_Handler();
-
+can_send(&hcan1,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX2) != HAL_OK;
 
 
 }
+
 
 
 void can_tx_2(){
@@ -446,7 +259,7 @@ hvcb_hvb_rx_v_cell_pack((uint8_t *)&buffer_tx, &v_cell, sizeof(buffer_tx));
 TxHeader.DLC = sizeof(buffer_tx);
 TxHeader.StdId = HVCB_HVB_RX_V_CELL_FRAME_ID;
 
-if(can_send(&hcan1,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX1)!= HAL_OK) Error_Handler();
+can_send(&hcan2,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX1)!= HAL_OK;
 
 }
 
@@ -473,7 +286,7 @@ void can_tx_3(){
     TxHeader.DLC   = sizeof(buffer_tx);
     TxHeader.StdId = NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID;
 
-    if (can_send(&hcan2,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX0) != HAL_OK) Error_Handler(); 
+    can_send(&hcan2,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX0) != HAL_OK; 
     
     
 }
@@ -494,7 +307,7 @@ void can_tx_4(){
     TxHeader.DLC   = sizeof(buffer_tx);
     TxHeader.StdId = HVCB_HVB_RX_T_CELL_FRAME_ID;
 
-    if (can_send(&hcan1,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX2) != HAL_OK) Error_Handler(); 
+   can_send(&hcan2,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX2) != HAL_OK; 
 
 }
 
@@ -513,7 +326,7 @@ void can_tx_5(){
     TxHeader.DLC   = sizeof(buffer_tx);
     TxHeader.StdId = HVCB_HVB_RX_SOC_FRAME_ID;
 
-    if (can_send(&hcan1,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX1) != HAL_OK) Error_Handler(); 
+    can_send(&hcan2,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX1) != HAL_OK; 
 
 }
 
@@ -563,7 +376,7 @@ mcb_tlb_bat_signals_status_pack((uint8_t *) &buffer_tx, &tlb_signals, MCB_TLB_BA
 TxHeader.DLC   = sizeof(buffer_tx);
 TxHeader.StdId = MCB_TLB_BAT_SIGNALS_STATUS_FRAME_ID;
 
-if (can_send(&hcan2,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX0) != HAL_OK) Error_Handler(); 
+can_send(&hcan1,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX0) != HAL_OK; 
 
 }
 
@@ -590,7 +403,7 @@ struct hvcb_hvb_tx_vcu_cmd_t static AIR_Cmd;
     TxHeader.DLC   = HVCB_HVB_TX_VCU_CMD_LENGTH;
     TxHeader.StdId = HVCB_HVB_TX_VCU_CMD_FRAME_ID;
 
-    if (can_send(&hcan1,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX0) != HAL_OK) Error_Handler(); 
+    can_send(&hcan2,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX0) != HAL_OK; 
 
 
 }
@@ -618,10 +431,11 @@ void AIR_CAN_Cmd_On(){
     TxHeader.DLC   = HVCB_HVB_TX_VCU_CMD_LENGTH;
     TxHeader.StdId = HVCB_HVB_TX_VCU_CMD_FRAME_ID;
 
-    if (can_send(&hcan2,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX0) != HAL_OK) {
+    if (can_send(&HVCB_CAN_HANDLE,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX0) != HAL_OK) {
         uint8_t volatile extern error_code;
         error_code = can_send_error;
-        Error_Handler();} 
+        MX_CAN2_Init();
+        } 
 
 
 }
@@ -647,10 +461,11 @@ void AIR_CAN_Cmd_Off(){
     TxHeader.DLC   = HVCB_HVB_TX_VCU_CMD_LENGTH;
     TxHeader.StdId = HVCB_HVB_TX_VCU_CMD_FRAME_ID;
 
-    if (can_send(&hcan2,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX0) != HAL_OK){
+    if (can_send(&HVCB_CAN_HANDLE,(uint8_t *) &buffer_tx, &TxHeader, CAN_TX_MAILBOX0) != HAL_OK){
         uint8_t volatile extern error_code;
         error_code = can_send_error;
-        Error_Handler(); }
+        MX_CAN2_Init();
+}
 
 
 }

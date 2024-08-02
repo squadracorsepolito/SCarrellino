@@ -18,4 +18,4 @@ uint8_t     index;
 void SW_Watchdog_set(SW_Watchdog_Typedef *info_struct);
 void SW_Watchdog_start(char *info_struct_name);
 HAL_StatusTypeDef SW_Wachdog_routine();
-void SW_Wachdog_Refresh(char *info_struct_name);
+void SW_Watchdog_Refresh(char *info_struct_name);

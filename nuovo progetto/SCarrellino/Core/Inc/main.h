@@ -108,10 +108,17 @@ void Error_Handler(void);
 #define LOG_UART huart3
 
 //define to enable the test functions
+
 //#define TEST 
+#define debug
+#define silence
+//#define BRUSA_on
 
-//#define silence 
+#define MCB_CAN_HANDLE hcan2
+#define HVCB_CAN_HANDLE hcan1
 
+#define SDC_active 1
+#define SDC_inactive 0
 
 // error messages
 #define init_fsm_error 0
@@ -128,7 +135,7 @@ void Error_Handler(void);
  #define ChargeBlueLedOn     HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 1);
  #define ChargeBlueLedOff    HAL_GPIO_WritePin(STAT2_LED_GPIO_OUT_GPIO_Port, STAT2_LED_GPIO_OUT_Pin, 0);
  #define ChargeENcmdON       HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 0);
- #define ChargeENcmdOFF      HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 1);
+ #define ChargeENcmdOFF()      HAL_GPIO_WritePin(CH_EN_CMD_GPIO_OUT_GPIO_Port, CH_EN_CMD_GPIO_OUT_Pin, 1);
 
 #define _800hz 1249
 #define _1khz 999 

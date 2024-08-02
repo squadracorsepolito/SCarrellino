@@ -2,7 +2,9 @@
 #include "SW_Watchdog.h"
 #include "stdbool.h"
 #include "string.h"
-
+#include "usart.h"
+#include "string.h"
+#include "stdio.h"
 
 
 
@@ -41,7 +43,7 @@ void SW_Watchdog_start(char *info_struct_name){
 }
 
 //the routine function, to be put in  the while(1)
-HAL_StatusTypeDef SW_Wachdog_routine(){
+HAL_StatusTypeDef SW_Watchdog_routine(){
 
     uint8_t static i = 0;
 
@@ -59,11 +61,37 @@ HAL_StatusTypeDef SW_Wachdog_routine(){
 }
 
 //refreshes the watchdog
-void SW_Wachdog_Refresh(char *info_struct_name){
+void SW_Watchdog_Refresh(char *info_struct_name){
 
     for (uint8_t i = 0; i<number_of_Watchdog; i++){
         if(WD_struct[i].name == info_struct_name) time[i] = HAL_GetTick();
 
     }
+
+}
+
+
+
+
+void watchdog_check(){
+
+extern uint8_t volatile error_code;
+
+
+    if (SW_Watchdog_routine() != HAL_OK){
+
+        error_code = watch_dog_error;
+        char buffer[40];
+        extern bool  index_error[number_of_struct];
+        for (uint8_t i = 0;i< number_of_struct; i++){
+           if (index_error[i] == 1) {
+            sprintf(buffer, "watch dog error index = %d\n\r", i);
+            HAL_UART_Transmit(&LOG_UART, (uint8_t *)buffer, strlen(buffer), 100);
+           }
+
+    
+        }
+  
+    } 
 
 }

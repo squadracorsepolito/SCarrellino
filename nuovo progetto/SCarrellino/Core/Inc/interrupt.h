@@ -1,3 +1,6 @@
+#include "stdio.h"
+#include "main.h"
+#include "stdbool.h"
 typedef struct
 {
     uint32_t id;

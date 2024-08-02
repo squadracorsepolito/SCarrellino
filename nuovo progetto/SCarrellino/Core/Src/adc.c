@@ -22,6 +22,8 @@
 
 /* USER CODE BEGIN 0 */
 #include "ntc.h"
+volatile uint16_t ntc_value;
+
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;
@@ -71,6 +73,7 @@ void MX_ADC1_Init(void)
   }
   /* USER CODE BEGIN ADC1_Init 2 */
 
+HAL_ADC_Start_DMA(&hadc1, (uint32_t *) &ntc_value, 1);
   /* USER CODE END ADC1_Init 2 */
 
 }

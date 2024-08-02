@@ -1,5 +1,6 @@
 #include "main.h"
 #include "math.h"
+#include "stdbool.h"
 
 
 //costants for the temperature measure
@@ -13,6 +14,10 @@
 #define Val         5
 #define Rpu         10000.0 
 #define adc_conv_bt 12
+
+
+extern bool flag_ntc;
+extern volatile uint8_t ntc_temp;
 
 
 uint16_t get_resistance(uint16_t ntc_value){
@@ -32,10 +37,16 @@ uint8_t get_temperature(float resistance){
 
 uint8_t get_ntc_temperature(uint16_t ntc_value){
 
+    if(flag_ntc == 1){
+
     uint16_t resistance = get_resistance(ntc_value);
     uint8_t  temperature = get_temperature(resistance);
 
-    return temperature;
+    ntc_temp = temperature;
+    }
+
+    return 0;
+
 
 };
 

@@ -23,8 +23,6 @@ extern FSM_HandleTypeDef hfsm;
 
 
 
-
-
 //value of the timer
 extern volatile uint16_t counter;
 
@@ -56,9 +54,9 @@ if(ADC_conv_flag == 1){
         display_routine_1();
         break;
 
-    case 2:
-        display_routine_2();
-        break;
+    //case 2:
+    //    display_routine_2();
+    //    break;
 
     default:
         display_routine_0();
@@ -112,22 +110,23 @@ void display_routine_0(){
 
     // state of charge
     I2C_LCD_ACapo(I2C_LCD);
-    sprintf(ntc_temp_buffer,"Batt Charge : %.1lf%% ", (SOC*0.04 + 50));
+    sprintf(ntc_temp_buffer,"Batt Charge : %.1f%% ", (SOC*0.04 + 50));
     I2C_LCD_WriteString(I2C_LCD, (char*) &ntc_temp_buffer);
 
 
     //charging temperature
     if (hfsm.current_state == 1){
         I2C_LCD_ACapo(I2C_LCD);
-        sprintf(ntc_temp_buffer,"Charge Temp : %.0lf C ", charge_temp);
+        sprintf(ntc_temp_buffer,"Charge Temp : %.0f C ", charge_temp);
         I2C_LCD_WriteString(I2C_LCD, (char*) &ntc_temp_buffer);
      
     }
 
     else{
         I2C_LCD_ACapo(I2C_LCD);
-        sprintf(ntc_temp_buffer, "                   ");
-        I2C_LCD_WriteString(I2C_LCD, (char*) &ntc_temp_buffer);
+
+        char static void_buffer[21] =  "                   ";
+        I2C_LCD_WriteString(I2C_LCD, (char*) &void_buffer);
         }
 
 
@@ -157,21 +156,22 @@ void display_routine_1(){
 
     I2C_LCD_Home(I2C_LCD);
 
-    sprintf(buff, "CELLS INFO");
+    char static cell_info_buffer[15] = "CELLS INFO";
+
+    I2C_LCD_WriteString(I2C_LCD,(char *) &cell_info_buffer);
+    I2C_LCD_ACapo(I2C_LCD);
+
+
+    sprintf(buff, "v max  =%.2f ID=%.0f",v_max_rx, v_max_id_rx);
     I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
 
-    sprintf(buff, "v max  =%.2lf ID=%.0lf",v_max_rx, v_max_id_rx);
+    sprintf(buff, "v min  =%.2f ID=%.0f",v_min_rx, v_min_id_rx );
     I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
-
-    sprintf(buff, "v min  =%.2lf ID=%.0lf",v_min_rx, v_min_id_rx );
-    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
-    I2C_LCD_ACapo(I2C_LCD);
-
-    sprintf(buff,"v mean =%.2lf", v_mean_rx );
+    sprintf(buff,"v mean =%.2f", v_mean_rx );
     I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
@@ -200,7 +200,7 @@ void display_routine_2(){
     I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
-    sprintf(buff, "V = %.2lf I = %.2lf", V_out_rx, I_out_rx);
+    sprintf(buff, "V = %.2f I = %.2f", V_out_rx, I_out_rx);
     I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
@@ -208,7 +208,7 @@ void display_routine_2(){
     I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
-    sprintf(buff, "V = %.2lf I = %.2lf", mains_v_rx, mains_i_rx);
+    sprintf(buff, "V = %.2f I = %.2f", mains_v_rx, mains_i_rx);
     I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
@@ -368,7 +368,7 @@ void buzzer_routine(){
     extern bool buzzer_charge_on;
     extern bool buzzer_stop_charge_on;
     
-    bool static flag = 0;
+    uint8_t static flag = 0;
     
     if(buzzer_charge_on == 1){
 

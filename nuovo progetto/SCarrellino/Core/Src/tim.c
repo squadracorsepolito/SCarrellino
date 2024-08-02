@@ -200,6 +200,8 @@ void MX_TIM3_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM3_Init 2 */
+  HAL_TIM_Encoder_Start_IT(&htim3, TIM_CHANNEL_ALL);
+
   /* USER CODE END TIM3_Init 2 */
 
 }
@@ -253,6 +255,9 @@ void MX_TIM4_Init(void)
   }
   /* USER CODE BEGIN TIM4_Init 2 */
 
+//timer for adc conversions
+HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_4);
+
   /* USER CODE END TIM4_Init 2 */
 
 }
@@ -285,7 +290,8 @@ void MX_TIM6_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM6_Init 2 */
-
+//can command TX
+HAL_TIM_Base_Start_IT(&htim6);
   /* USER CODE END TIM6_Init 2 */
 
 }
@@ -318,7 +324,6 @@ void MX_TIM7_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM7_Init 2 */
-
   /* USER CODE END TIM7_Init 2 */
 
 }

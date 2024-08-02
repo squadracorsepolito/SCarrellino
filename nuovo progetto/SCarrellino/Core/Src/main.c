@@ -59,9 +59,9 @@
 uint8_t raw = 0u;
 
 bool start_fsm = 0;
-volatile uint16_t ntc_value;
+//volatile uint16_t ntc_value;
 volatile uint8_t ntc_temp;
-volatile char ntc_temp_buffer[21];
+volatile char ntc_temp_buffer[26];
 FSM_HandleTypeDef hfsm;
 
 uint8_t volatile error_code = 30;
@@ -72,8 +72,15 @@ uint32_t               txmailbox;
 uint8_t                RxData[8];
 uint32_t               rxfifo;
 
+
+//flag to know when a message is received in CAN
 bool volatile can_rx_flag = 0;
 
+bool first_charge = 1;
+
+//Flag to know if it is the first code run to check if the CmdEn is still on 
+bool first_run = 1;
+uint32_t first_run_timestamp ;
 
 
 /* USER CODE END PD */
@@ -86,6 +93,16 @@ bool volatile can_rx_flag = 0;
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+
+
+/**
+ * @brief Function to enable the FPU   */
+void SystemInit1(void)
+{
+    
+  SCB->CPACR |= ((3UL << 20U)|(3UL << 22U));  /* set CP10 and CP11 Full Access */
+   
+}
 
 /* USER CODE END PV */
 
@@ -124,7 +141,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  SystemInit1();
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -150,57 +167,13 @@ int main(void)
 I2C_LCD_Init(MyI2C_LCD);
 
 
-HAL_TIM_Encoder_Start_IT(&htim3, TIM_CHANNEL_ALL);
-HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_4);
-HAL_ADC_Start_DMA(&hadc1, (uint32_t *) &ntc_value, 1);
+//HAL_TIM_Encoder_Start_IT(&htim3, TIM_CHANNEL_ALL);
 
-
-// attivazione
-if(HAL_CAN_Start(&hcan1) != HAL_OK){
-    error_code = CAN1_start_error;
-    Error_Handler();
-  }
-
-
-if(HAL_CAN_Start(&hcan2) != HAL_OK){
-    error_code = CAN2_start_error;
-    Error_Handler();
-  }
-  else( HAL_UART_Transmit(&LOG_UART, (uint8_t *)"\n\n\rCAN pronta\n\r", strlen("\n\n\rCAN pronta\n\r"), 100));
-
-
- // attivazione interrupt Rx
-if (HAL_CAN_ActivateNotification(&hcan1, 
-    CAN_IT_RX_FIFO0_MSG_PENDING |
-    CAN_IT_RX_FIFO1_MSG_PENDING |
-    CAN_IT_ERROR_WARNING |
-    CAN_IT_ERROR_PASSIVE |
-    CAN_IT_BUSOFF |
-    CAN_IT_LAST_ERROR_CODE |
-    CAN_IT_ERROR |
-    CAN_IT_TX_MAILBOX_EMPTY
-  ) != HAL_OK)
-  {
-    HAL_UART_Transmit(&LOG_UART, (uint8_t *)"errore attivazione IT\n\r", strlen("errore attivazione IT\n\r"), 10);
-    error_code = CAN_it_activation_error;
-	  Error_Handler();
-  }
-  
-if (HAL_CAN_ActivateNotification(&hcan2, 
-    CAN_IT_RX_FIFO1_MSG_PENDING |
-    CAN_IT_RX_FIFO0_MSG_PENDING |
-    CAN_IT_ERROR_WARNING |
-    CAN_IT_ERROR_PASSIVE |
-    CAN_IT_BUSOFF |
-    CAN_IT_LAST_ERROR_CODE |
-    CAN_IT_ERROR |
-    CAN_IT_TX_MAILBOX_EMPTY
-  ) != HAL_OK)
-  {
-    HAL_UART_Transmit(&LOG_UART, (uint8_t *)"errore attivazione IT brusa\n\r", strlen("errore attivazione IT brusa\n\r"), 10);
-    error_code = CAN_it_activation_error;
-	  Error_Handler();
-  }
+//timer for adc conversions
+//HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_4);
+//HAL_ADC_Start_DMA(&hadc1, (uint32_t *) &ntc_value, 1);
+//can command TX
+//HAL_TIM_Base_Start_IT(&htim6);
 
 
 //fsm
@@ -208,51 +181,16 @@ if (HAL_CAN_ActivateNotification(&hcan2,
  
   if (FSM_SCARRELLINO_FSM_init(&hfsm, n_events, run_callback_1, transition_callback_1) != STMLIBS_OK){
     error_code = init_fsm_error;
-    Error_Handler();
+    
   }
   if (FSM_start(&hfsm) != STMLIBS_OK){
     error_code = fsm_start_error;
-    Error_Handler();
+    
   }
 
 
-IMD_err_on;
-AMS_err_on;
-can_WD_setting();
+//can_WD_setting();
 //can_WD_start();
-
-
-
-
-//AIR_CAN_Cmd_On();
-//ChargeENcmdON();
-//I2C_LCD_Clear(I2C_LCD);
-//I2C_LCD_WriteString(I2C_LCD, "air chiusi");
-//__disable_irq();
-
-
-
-HAL_TIM_Base_Start_IT(&htim6);
-
-
-#ifdef TEST
-
-can_tx_1();
-
-can_tx_2();
-
-can_tx_3();
-
-can_tx_4();
-
-can_tx_5();
-
-can_tx_6();
-
-can_tx_7();
-
-#endif
-
 
 
   /* USER CODE END 2 */
@@ -261,27 +199,17 @@ can_tx_7();
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-   FSM_routine(&hfsm);
+  
+  
+  can_rx_routine();
+  can_tx_routine();
+  display_routine();
+  IMD_AMS_error_handler();
+  buzzer_routine();
+  FSM_routine(&hfsm);
+  //watchdog_check();
 
    
-   //if (SW_Wachdog_routine() != HAL_OK){
-//
-   // error_code = watch_dog_error;
-   // char buffer[40];
-   // extern bool  index_error[number_of_struct];
-   // for (uint8_t i = 0;i< number_of_struct; i++){
-   //    if (index_error[i] == 1) {
-   //     sprintf(buffer, "watch dog error index = %d\n\r", i);
-   //     HAL_UART_Transmit(&LOG_UART, (uint8_t *)buffer, strlen(buffer), 100);
-   //    }
-//
-//
-   // }
-   // Error_Handler();
-//
-   //  
-   //  }
 
     
 
@@ -334,7 +262,7 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLRCLK;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
@@ -364,7 +292,7 @@ void Error_Handler(void)
 
     //STOP CHARGE
 
-    ChargeENcmdOFF;
+    ChargeENcmdOFF();
     ChargeBlueLedOff;
     WarnLedOn;
     TSAC_fan_off;
@@ -379,8 +307,8 @@ void Error_Handler(void)
 
     __enable_irq();
     HAL_Delay(2000);
+      buzzer_off;
     __disable_irq();
-    buzzer_off;
   
 
   while (1)

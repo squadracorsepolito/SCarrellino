@@ -61,7 +61,7 @@ uint8_t raw = 0u;
 bool start_fsm = 0;
 volatile uint16_t ntc_value;
 volatile uint8_t ntc_temp;
-volatile char ntc_temp_buffer[21];
+volatile char ntc_temp_buffer[26];
 FSM_HandleTypeDef hfsm;
 
 uint8_t volatile error_code = 30;
@@ -143,6 +143,7 @@ int main(void)
   MX_TIM2_Init();
   MX_USART3_UART_Init();
   MX_TIM6_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 
 
@@ -153,53 +154,6 @@ HAL_TIM_Encoder_Start_IT(&htim3, TIM_CHANNEL_ALL);
 HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_4);
 HAL_ADC_Start_DMA(&hadc1, (uint32_t *) &ntc_value, 1);
 
-
-// attivazione
-if(HAL_CAN_Start(&hcan1) != HAL_OK){
-    error_code = CAN1_start_error;
-    Error_Handler();
-  }
-
-
-if(HAL_CAN_Start(&hcan2) != HAL_OK){
-    error_code = CAN2_start_error;
-    Error_Handler();
-  }
-  else( HAL_UART_Transmit(&LOG_UART, (uint8_t *)"\n\n\rCAN pronta\n\r", strlen("\n\n\rCAN pronta\n\r"), 100));
-
-
- // attivazione interrupt Rx
-if (HAL_CAN_ActivateNotification(&hcan1, 
-    CAN_IT_RX_FIFO0_MSG_PENDING |
-    CAN_IT_RX_FIFO1_MSG_PENDING |
-    CAN_IT_ERROR_WARNING |
-    CAN_IT_ERROR_PASSIVE |
-    CAN_IT_BUSOFF |
-    CAN_IT_LAST_ERROR_CODE |
-    CAN_IT_ERROR |
-    CAN_IT_TX_MAILBOX_EMPTY
-  ) != HAL_OK)
-  {
-    HAL_UART_Transmit(&LOG_UART, (uint8_t *)"errore attivazione IT\n\r", strlen("errore attivazione IT\n\r"), 10);
-    error_code = CAN_it_activation_error;
-	  Error_Handler();
-  }
-  
-if (HAL_CAN_ActivateNotification(&hcan2, 
-    CAN_IT_RX_FIFO1_MSG_PENDING |
-    CAN_IT_RX_FIFO0_MSG_PENDING |
-    CAN_IT_ERROR_WARNING |
-    CAN_IT_ERROR_PASSIVE |
-    CAN_IT_BUSOFF |
-    CAN_IT_LAST_ERROR_CODE |
-    CAN_IT_ERROR |
-    CAN_IT_TX_MAILBOX_EMPTY
-  ) != HAL_OK)
-  {
-    HAL_UART_Transmit(&LOG_UART, (uint8_t *)"errore attivazione IT brusa\n\r", strlen("errore attivazione IT brusa\n\r"), 10);
-    error_code = CAN_it_activation_error;
-	  Error_Handler();
-  }
 
 
 //fsm
@@ -215,8 +169,6 @@ if (HAL_CAN_ActivateNotification(&hcan2,
   }
 
 
-IMD_err_on;
-AMS_err_on;
 can_WD_setting();
 //can_WD_start();
 
@@ -231,7 +183,7 @@ can_WD_setting();
 
 
 
-HAL_TIM_Base_Start_IT(&htim6);
+HAL_TIM_OC_Start_IT(&htim6, TIM_CHANNEL_ALL);
 
 
 #ifdef TEST
@@ -263,26 +215,26 @@ can_tx_7();
 
    FSM_routine(&hfsm);
 
-   /*
-   if (SW_Wachdog_routine() != HAL_OK){
+   
+   //if (SW_Wachdog_routine() != HAL_OK){
+//
+   // error_code = watch_dog_error;
+   // char buffer[40];
+   // extern bool  index_error[number_of_struct];
+   // for (uint8_t i = 0;i< number_of_struct; i++){
+   //    if (index_error[i] == 1) {
+   //     sprintf(buffer, "watch dog error index = %d\n\r", i);
+   //     HAL_UART_Transmit(&LOG_UART, (uint8_t *)buffer, strlen(buffer), 100);
+   //    }
+//
+//
+   // }
+   // Error_Handler();
+//
+   //  
+   //  }
 
-    error_code = watch_dog_error;
-    char buffer[40];
-    extern bool  index_error[number_of_struct];
-    for (uint8_t i = 0;i< number_of_struct; i++){
-       if (index_error[i] == 1) {
-        sprintf(buffer, "watch dog error index = %d\n\r", i);
-        HAL_UART_Transmit(&LOG_UART, (uint8_t *)buffer, strlen(buffer), 100);
-       }
-
-
-    }
-    Error_Handler();
-
-     
-     }
-
-     */
+    
 
     /* USER CODE END WHILE */
 
@@ -365,7 +317,7 @@ void Error_Handler(void)
 
     ChargeENcmdOFF;
     ChargeBlueLedOff;
-    ErrLedOn;
+    WarnLedOn;
     TSAC_fan_off;
 
   //display error
@@ -378,8 +330,8 @@ void Error_Handler(void)
 
     __enable_irq();
     HAL_Delay(2000);
+      buzzer_off;
     __disable_irq();
-    buzzer_off;
   
 
   while (1)

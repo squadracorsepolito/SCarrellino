@@ -32,6 +32,7 @@
 #include "can_functions.h"
 #include "hvcb.h"
 
+extern uint8_t volatile error_code;
 
 /* USER CODE END 0 */
 
@@ -66,20 +67,23 @@ void MX_CAN1_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN1_Init 2 */
+
+
 CAN_FilterTypeDef filtriRx1;
     filtriRx1.FilterActivation     = ENABLE;
     filtriRx1.FilterFIFOAssignment = CAN_FILTER_FIFO0;
     filtriRx1.FilterBank           = 0u;
     filtriRx1.FilterIdHigh         = (HVCB_HVB_RX_V_CELL_FRAME_ID << 5);
     filtriRx1.FilterIdLow          = 0x0000u;
-    filtriRx1.FilterMaskIdHigh     = (HVCB_HVB_TX_VCU_CMD_FRAME_ID << 5);
+    //filtriRx1.FilterMaskIdHigh     = (HVCB_HVB_RX_DIAGNOSIS_FRAME_ID << 5);
+    filtriRx1.FilterMaskIdHigh     = (HVCB_HVB_RX_V_CELL_FRAME_ID << 5);
     filtriRx1.FilterMaskIdLow      = 0x0000u;
     filtriRx1.FilterMode           = CAN_FILTERMODE_IDLIST;
     filtriRx1.FilterScale          = CAN_FILTERSCALE_32BIT;
     filtriRx1.SlaveStartFilterBank = 11u;
 
 
-HAL_CAN_ConfigFilter(&hcan1, &filtriRx1);
+HAL_CAN_ConfigFilter(&HVCB_CAN_HANDLE, &filtriRx1);
 
 CAN_FilterTypeDef filtriRx2;
     filtriRx2.FilterActivation     = ENABLE;
@@ -94,7 +98,30 @@ CAN_FilterTypeDef filtriRx2;
     filtriRx2.SlaveStartFilterBank = 11u;
 
 
-HAL_CAN_ConfigFilter(&hcan1, &filtriRx2);
+HAL_CAN_ConfigFilter(&HVCB_CAN_HANDLE, &filtriRx2);
+
+
+ // attivazione interrupt Rx
+if (HAL_CAN_ActivateNotification(&hcan1, 
+    CAN_IT_RX_FIFO0_MSG_PENDING |
+    CAN_IT_RX_FIFO1_MSG_PENDING |
+    CAN_IT_ERROR_WARNING |
+    CAN_IT_ERROR_PASSIVE |
+    CAN_IT_BUSOFF |
+    CAN_IT_LAST_ERROR_CODE |
+    CAN_IT_ERROR |
+    CAN_IT_TX_MAILBOX_EMPTY
+  ) != HAL_OK)
+  {
+    HAL_UART_Transmit(&LOG_UART, (uint8_t *)"errore attivazione IT\n\r", strlen("errore attivazione IT\n\r"), 10);
+    error_code = CAN_it_activation_error;
+  }
+
+  // attivazione
+if(HAL_CAN_Start(&hcan1) != HAL_OK){
+    error_code = CAN1_start_error;
+  }
+
 
 
   /* USER CODE END CAN1_Init 2 */
@@ -141,7 +168,7 @@ void MX_CAN2_Init(void)
     filtriRx1.SlaveStartFilterBank = 11u;
 
 
-HAL_CAN_ConfigFilter(&hcan2, &filtriRx1);
+HAL_CAN_ConfigFilter(&MCB_CAN_HANDLE, &filtriRx1);
 
 CAN_FilterTypeDef filtriRx2;
     filtriRx2.FilterActivation     = ENABLE;
@@ -156,7 +183,33 @@ CAN_FilterTypeDef filtriRx2;
     filtriRx2.SlaveStartFilterBank = 11u;
 
 
-HAL_CAN_ConfigFilter(&hcan2, &filtriRx2);
+HAL_CAN_ConfigFilter(&MCB_CAN_HANDLE, &filtriRx2);
+
+
+
+
+  
+if (HAL_CAN_ActivateNotification(&hcan2, 
+    CAN_IT_RX_FIFO1_MSG_PENDING |
+    CAN_IT_RX_FIFO0_MSG_PENDING |
+    CAN_IT_ERROR_WARNING |
+    CAN_IT_ERROR_PASSIVE |
+    CAN_IT_BUSOFF |
+    CAN_IT_LAST_ERROR_CODE |
+    CAN_IT_ERROR |
+    CAN_IT_TX_MAILBOX_EMPTY
+  ) != HAL_OK)
+  {
+    HAL_UART_Transmit(&LOG_UART, (uint8_t *)"errore attivazione IT brusa\n\r", strlen("errore attivazione IT brusa\n\r"), 10);
+    error_code = CAN_it_activation_error;
+	  
+  }
+
+  if(HAL_CAN_Start(&hcan2) != HAL_OK){
+    error_code = CAN2_start_error;
+   
+  }
+  else( HAL_UART_Transmit(&LOG_UART, (uint8_t *)"\n\n\rCAN pronta\n\r", strlen("\n\n\rCAN pronta\n\r"), 100));
 
 
 
@@ -201,8 +254,6 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
     HAL_GPIO_Init(D_CAN2_TX_GPIO_Port, &GPIO_InitStruct);
 
     /* CAN1 interrupt Init */
-    HAL_NVIC_SetPriority(CAN1_TX_IRQn, 1, 0);
-    HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
     HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 1, 0);
     HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
     HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 1, 0);
@@ -245,13 +296,11 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* canHandle)
     HAL_GPIO_Init(R_CAN1_TX_GPIO_Port, &GPIO_InitStruct);
 
     /* CAN2 interrupt Init */
-    HAL_NVIC_SetPriority(CAN2_TX_IRQn, 2, 0);
-    HAL_NVIC_EnableIRQ(CAN2_TX_IRQn);
-    HAL_NVIC_SetPriority(CAN2_RX0_IRQn, 2, 0);
+    HAL_NVIC_SetPriority(CAN2_RX0_IRQn, 1, 0);
     HAL_NVIC_EnableIRQ(CAN2_RX0_IRQn);
-    HAL_NVIC_SetPriority(CAN2_RX1_IRQn, 2, 0);
+    HAL_NVIC_SetPriority(CAN2_RX1_IRQn, 1, 0);
     HAL_NVIC_EnableIRQ(CAN2_RX1_IRQn);
-    HAL_NVIC_SetPriority(CAN2_SCE_IRQn, 2, 0);
+    HAL_NVIC_SetPriority(CAN2_SCE_IRQn, 1, 0);
     HAL_NVIC_EnableIRQ(CAN2_SCE_IRQn);
   /* USER CODE BEGIN CAN2_MspInit 1 */
 
@@ -280,7 +329,6 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
     HAL_GPIO_DeInit(GPIOB, R_CAN2_RX_Pin|D_CAN2_TX_Pin);
 
     /* CAN1 interrupt Deinit */
-    HAL_NVIC_DisableIRQ(CAN1_TX_IRQn);
     HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
     HAL_NVIC_DisableIRQ(CAN1_RX1_IRQn);
     HAL_NVIC_DisableIRQ(CAN1_SCE_IRQn);
@@ -307,7 +355,6 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* canHandle)
     HAL_GPIO_DeInit(GPIOB, R_CAN1_RX_Pin|R_CAN1_TX_Pin);
 
     /* CAN2 interrupt Deinit */
-    HAL_NVIC_DisableIRQ(CAN2_TX_IRQn);
     HAL_NVIC_DisableIRQ(CAN2_RX0_IRQn);
     HAL_NVIC_DisableIRQ(CAN2_RX1_IRQn);
     HAL_NVIC_DisableIRQ(CAN2_SCE_IRQn);
