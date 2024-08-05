@@ -17,5 +17,4 @@ void can_tx_6();
 void can_tx_7();
 void AIR_CAN_Cmd_On();
 void AIR_CAN_Cmd_Off();
-void can_WD_setting();
 void can_WD_start();

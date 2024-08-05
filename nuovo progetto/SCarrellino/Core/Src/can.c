@@ -74,10 +74,10 @@ CAN_FilterTypeDef filtriRx1;
     filtriRx1.FilterFIFOAssignment = CAN_FILTER_FIFO0;
     filtriRx1.FilterBank           = 0u;
     filtriRx1.FilterIdHigh         = (HVCB_HVB_RX_V_CELL_FRAME_ID << 5);
-    filtriRx1.FilterIdLow          = 0x0000u;
+    filtriRx1.FilterIdLow          = 0x0000;
     //filtriRx1.FilterMaskIdHigh     = (HVCB_HVB_RX_DIAGNOSIS_FRAME_ID << 5);
-    filtriRx1.FilterMaskIdHigh     = (HVCB_HVB_RX_V_CELL_FRAME_ID << 5);
-    filtriRx1.FilterMaskIdLow      = 0x0000u;
+    filtriRx1.FilterMaskIdHigh     = (HVCB_HVB_RX_MEASURE_FRAME_ID << 5);
+    filtriRx1.FilterMaskIdLow      = 0x0000;
     filtriRx1.FilterMode           = CAN_FILTERMODE_IDLIST;
     filtriRx1.FilterScale          = CAN_FILTERSCALE_32BIT;
     filtriRx1.SlaveStartFilterBank = 11u;
@@ -92,7 +92,7 @@ CAN_FilterTypeDef filtriRx2;
     filtriRx2.FilterIdHigh         = (HVCB_HVB_RX_T_CELL_FRAME_ID << 5);
     filtriRx2.FilterIdLow          = 0x0000;
     filtriRx2.FilterMaskIdHigh     = (HVCB_HVB_RX_SOC_FRAME_ID << 5);
-    filtriRx2.FilterMaskIdLow      = 0x000;
+    filtriRx2.FilterMaskIdLow      = 0x0000;
     filtriRx2.FilterMode           = CAN_FILTERMODE_IDLIST;
     filtriRx2.FilterScale          = CAN_FILTERSCALE_32BIT;
     filtriRx2.SlaveStartFilterBank = 11u;
@@ -102,7 +102,7 @@ HAL_CAN_ConfigFilter(&HVCB_CAN_HANDLE, &filtriRx2);
 
 
  // attivazione interrupt Rx
-if (HAL_CAN_ActivateNotification(&hcan1, 
+if (HAL_CAN_ActivateNotification(&HVCB_CAN_HANDLE, 
     CAN_IT_RX_FIFO0_MSG_PENDING |
     CAN_IT_RX_FIFO1_MSG_PENDING |
     CAN_IT_ERROR_WARNING |
@@ -118,7 +118,7 @@ if (HAL_CAN_ActivateNotification(&hcan1,
   }
 
   // attivazione
-if(HAL_CAN_Start(&hcan1) != HAL_OK){
+if(HAL_CAN_Start(&HVCB_CAN_HANDLE) != HAL_OK){
     error_code = CAN1_start_error;
   }
 
@@ -189,7 +189,7 @@ HAL_CAN_ConfigFilter(&MCB_CAN_HANDLE, &filtriRx2);
 
 
   
-if (HAL_CAN_ActivateNotification(&hcan2, 
+if (HAL_CAN_ActivateNotification(&MCB_CAN_HANDLE, 
     CAN_IT_RX_FIFO1_MSG_PENDING |
     CAN_IT_RX_FIFO0_MSG_PENDING |
     CAN_IT_ERROR_WARNING |
@@ -205,7 +205,7 @@ if (HAL_CAN_ActivateNotification(&hcan2,
 	  
   }
 
-  if(HAL_CAN_Start(&hcan2) != HAL_OK){
+  if(HAL_CAN_Start(&MCB_CAN_HANDLE) != HAL_OK){
     error_code = CAN2_start_error;
    
   }

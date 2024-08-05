@@ -98,9 +98,9 @@ double extern   air_neg_cmd_is_active                   ,
 
 
 
-extern volatile bool                     can_rx_flag;
 
-extern uint8_t                           RxData;
+//flag to know when a message is received in CAN
+bool volatile can_rx_flag = 0;
 
 extern CAN_RxHeaderTypeDef               RxHeader;
 
@@ -123,7 +123,9 @@ double mains_v_rx,
 
 double charge_temp;
 
-double SOC = -50/0.04;
+double SOC = 0;
+
+double charging_curr = 0;
 
 
 double hvb_diag_imd_low_r = 1,
@@ -173,6 +175,7 @@ void can_rx_routine(void){
         HV_BMS1_CAN_data_storage();
         HV_BMS2_CAN_data_storage();
         HV_BMS3_CAN_data_storage();
+        HV_BMS4_CAN_data_storage();
         TLB_Battery_signals_CAN_data_storage();
         TLB_Battery_SDC_CAN_data_storage();
 
@@ -472,79 +475,31 @@ void AIR_CAN_Cmd_Off(){
 
 
 
-void can_WD_setting(){
-
-    SW_Watchdog_Typedef HVCB_HVB_RX_V_CELL_FRAME;
-
-    strcat(HVCB_HVB_RX_V_CELL_FRAME.name, "HVCB_HVB_RX_V_CELL_FRAME");
-    HVCB_HVB_RX_V_CELL_FRAME.index         = 0;
-    HVCB_HVB_RX_V_CELL_FRAME.cycle_time    = HVCB_HVB_RX_V_CELL_CYCLE_TIME_MS;
-    HVCB_HVB_RX_V_CELL_FRAME.watchdog_time = HVCB_HVB_RX_V_CELL_CYCLE_TIME_MS * 5;
-
-   //SW_Watchdog_Typedef HVCB_HVB_TX_VCU_CMD_FRAME;
-
-   //strcat(HVCB_HVB_TX_VCU_CMD_FRAME.name, "HVCB_HVB_TX_VCU_CMD_FRAME");
-   //HVCB_HVB_TX_VCU_CMD_FRAME.index         = 1;
-   //HVCB_HVB_TX_VCU_CMD_FRAME.cycle_time    = HVCB_HVB_TX_VCU_CMD_CYCLE_TIME_MS;
-   //HVCB_HVB_TX_VCU_CMD_FRAME.watchdog_time = HVCB_HVB_TX_VCU_CMD_CYCLE_TIME_MS * 5;
-
-    SW_Watchdog_Typedef HVCB_HVB_RX_T_CELL_FRAME;
-
-    strcat(HVCB_HVB_RX_T_CELL_FRAME.name, "HVCB_HVB_RX_T_CELL_FRAME");
-    HVCB_HVB_RX_T_CELL_FRAME.index         = 2;
-    HVCB_HVB_RX_T_CELL_FRAME.cycle_time    = HVCB_HVB_RX_T_CELL_CYCLE_TIME_MS;
-    HVCB_HVB_RX_T_CELL_FRAME.watchdog_time = HVCB_HVB_RX_T_CELL_CYCLE_TIME_MS * 5;
-
-    SW_Watchdog_Typedef HVCB_HVB_RX_SOC_FRAME;
-
-    strcat(HVCB_HVB_RX_SOC_FRAME.name, "HVCB_HVB_RX_SOC_FRAME");
-    HVCB_HVB_RX_SOC_FRAME.index         = 3;
-    HVCB_HVB_RX_SOC_FRAME.cycle_time    = HVCB_HVB_RX_SOC_CYCLE_TIME_MS;
-    HVCB_HVB_RX_SOC_FRAME.watchdog_time = HVCB_HVB_RX_SOC_CYCLE_TIME_MS * 5;
-
-   // SW_Watchdog_Typedef NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME;
-
-   // strcat(NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME.name, "NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME");
-  //  NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME.index         = 4;
-  //  NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME.cycle_time    = 100;
-  //  NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME.watchdog_time = 100 * 5;
-
-    SW_Watchdog_Typedef MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME;
-
-    strcat(MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME.name, "MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME");
-    MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME.index         = 5;
-    MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME.cycle_time    = MCB_TLB_BAT_SD_CSENSING_STATUS_CYCLE_TIME_MS;
-    MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME.watchdog_time = MCB_TLB_BAT_SD_CSENSING_STATUS_CYCLE_TIME_MS * 5; 
-
-    SW_Watchdog_Typedef MCB_TLB_BAT_SIGNALS_STATUS_FRAME;
-
-    strcat(MCB_TLB_BAT_SIGNALS_STATUS_FRAME.name, "MCB_TLB_BAT_SIGNALS_STATUS_FRAME");
-    MCB_TLB_BAT_SIGNALS_STATUS_FRAME.index         = 6;
-    MCB_TLB_BAT_SIGNALS_STATUS_FRAME.cycle_time    = MCB_TLB_BAT_SIGNALS_STATUS_CYCLE_TIME_MS;
-    MCB_TLB_BAT_SIGNALS_STATUS_FRAME.watchdog_time = MCB_TLB_BAT_SIGNALS_STATUS_CYCLE_TIME_MS * 5; 
 
 
-   SW_Watchdog_set(&HVCB_HVB_RX_V_CELL_FRAME);
-   //SW_Watchdog_set(&HVCB_HVB_TX_VCU_CMD_FRAME);
-   SW_Watchdog_set(&HVCB_HVB_RX_T_CELL_FRAME);
-   SW_Watchdog_set(&HVCB_HVB_RX_SOC_FRAME);
-  // SW_Watchdog_set(&NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME);
-   SW_Watchdog_set(&MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME);
-   SW_Watchdog_set(&MCB_TLB_BAT_SIGNALS_STATUS_FRAME);
-
-
-}
-
-
+/**
+ * @brief Starts all the the set watchdog
+ */
 void can_WD_start(){
 
-    SW_Watchdog_start("HVCB_HVB_RX_V_CELL_FRAME");
-  //  SW_Watchdog_start("HVCB_HVB_TX_VCU_CMD_FRAME");
-    SW_Watchdog_start("HVCB_HVB_RX_T_CELL_FRAME");
-    SW_Watchdog_start("HVCB_HVB_RX_SOC_FRAME");
-  //  SW_Watchdog_start("NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME");
-    SW_Watchdog_start("MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME");
-    SW_Watchdog_start("MCB_TLB_BAT_SIGNALS_STATUS_FRAME");
+    extern     SW_Watchdog_Typedef HVCB_HVB_RX_V_CELL_FRAME,
+               HVCB_HVB_RX_T_CELL_FRAME,
+               HVCB_HVB_RX_SOC_FRAME,
+               MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME,
+               HVCB_HVB_RX_MEASURE_FRAME,
+               MCB_TLB_BAT_SIGNALS_STATUS_FRAME;
+
+
+    SW_Watchdog_start(&HVCB_HVB_RX_V_CELL_FRAME);
+    SW_Watchdog_start(&HVCB_HVB_RX_T_CELL_FRAME);
+    SW_Watchdog_start(&HVCB_HVB_RX_SOC_FRAME);
+    SW_Watchdog_start(&HVCB_HVB_RX_MEASURE_FRAME);
+
+    #ifdef BRUSA
+    SW_Watchdog_start(&NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME);
+    #endif
+    SW_Watchdog_start(&MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME);
+    SW_Watchdog_start(&MCB_TLB_BAT_SIGNALS_STATUS_FRAME);
 
 }
 

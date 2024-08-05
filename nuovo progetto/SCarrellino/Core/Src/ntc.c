@@ -17,7 +17,7 @@
 
 
 extern bool flag_ntc;
-extern volatile uint8_t ntc_temp;
+volatile uint8_t ntc_temp;
 
 
 uint16_t get_resistance(uint16_t ntc_value){

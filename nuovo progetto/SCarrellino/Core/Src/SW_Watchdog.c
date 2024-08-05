@@ -13,58 +13,81 @@ uint8_t             number_of_Watchdog = 0;
 
 SW_Watchdog_Typedef WD_struct[number_of_struct];
 
-uint64_t            time[number_of_struct];
-bool                index_error[number_of_struct] = {0};
+uint32_t            time[number_of_struct];
+bool  volatile      index_error[number_of_struct] = {false};
 
 
-//add a watchdog
+/**
+ * @brief Set a new Watchdog, library function
+ * @param *info_struct_name Pointer to the SW_Watchdog_Typedef struct
+ */
 void SW_Watchdog_set(SW_Watchdog_Typedef *info_struct)
 {
 
     
-    WD_struct[number_of_Watchdog].cycle_time = (uint32_t ) &info_struct->cycle_time;
-    WD_struct[number_of_Watchdog].index = number_of_Watchdog;
-    strcat(WD_struct[number_of_Watchdog].name, info_struct->name);
-    WD_struct[number_of_Watchdog].watchdog_time = (uint32_t ) &info_struct->watchdog_time;
+    WD_struct[number_of_Watchdog].cycle_time      = (uint32_t ) info_struct->cycle_time;
+    WD_struct[number_of_Watchdog].index           = number_of_Watchdog;
+    WD_struct[number_of_Watchdog].watchdog_time   = (uint32_t ) info_struct->watchdog_time;
 
-    
     number_of_Watchdog ++;
 
 }
 
-//starts the watchdog
-void SW_Watchdog_start(char *info_struct_name){
+/**
+ * @brief Starts the Watchdog given, library function
+ * @param *info_struct_name Pointer to the SW_Watchdog_Typedef struct
+ */
+void SW_Watchdog_start(SW_Watchdog_Typedef *info_struct){
     
     for (uint8_t i = 0; i<number_of_Watchdog; i++){
-        if(WD_struct[i].name == info_struct_name) time[i] = HAL_GetTick();
+        if(WD_struct[i].index == info_struct->index) {
+            time[i] = HAL_GetTick();
+        }
 
     }
     
 }
 
-//the routine function, to be put in  the while(1)
+/**
+ * @brief  The routine function that checks all the Watchdog, library function
+ */
 HAL_StatusTypeDef SW_Watchdog_routine(){
 
+    bool error = false;
     uint8_t static i = 0;
 
-    for (i;i<number_of_Watchdog;i++){
+    for (i=0;i<number_of_Watchdog ;i++){
 
             if (HAL_GetTick() - time[i] >= WD_struct[i].watchdog_time){
-               index_error[i] = 1;
-               return HAL_ERROR;
+               index_error[i] = true;
+               error = true;
             }
 
             else{
-                HAL_OK;
+              index_error[i] = false;
             }
     }
+
+    if(error == true){
+        return HAL_ERROR;
+    }
+
+    else{
+        return HAL_OK;
+    }
+
+
+
+    
 }
 
-//refreshes the watchdog
-void SW_Watchdog_Refresh(char *info_struct_name){
+/**
+ * @brief Refreshes the given watchdog, library function
+ */ 
+void SW_Watchdog_Refresh(SW_Watchdog_Typedef *info_struct){
 
     for (uint8_t i = 0; i<number_of_Watchdog; i++){
-        if(WD_struct[i].name == info_struct_name) time[i] = HAL_GetTick();
+        if(WD_struct[i].index == info_struct->index) time[i] = HAL_GetTick();
 
     }
 
@@ -73,25 +96,24 @@ void SW_Watchdog_Refresh(char *info_struct_name){
 
 
 
-void watchdog_check(){
-
-extern uint8_t volatile error_code;
 
 
-    if (SW_Watchdog_routine() != HAL_OK){
+/**
+ * @brief initialize the given watchdog structure
+ * @param *info_struct Pointer to the watchdog structure to be initialized
+ * @param Index index wanted for this struct
+ * @param Cycle_tyme period of this message in the CAN bus 
+ */
+void can_WD_init(SW_Watchdog_Typedef *info_struct, uint32_t cycle_tyme){
 
-        error_code = watch_dog_error;
-        char buffer[40];
-        extern bool  index_error[number_of_struct];
-        for (uint8_t i = 0;i< number_of_struct; i++){
-           if (index_error[i] == 1) {
-            sprintf(buffer, "watch dog error index = %d\n\r", i);
-            HAL_UART_Transmit(&LOG_UART, (uint8_t *)buffer, strlen(buffer), 100);
-           }
+    static uint8_t index = 0;
 
-    
-        }
-  
-    } 
+    info_struct->index         = index;
+    info_struct->cycle_time    = cycle_tyme;
+    info_struct->watchdog_time = cycle_tyme * 5; 
+
+    index += 1;
+    SW_Watchdog_set(info_struct);
+   
 
 }

@@ -39,6 +39,7 @@
 #include "string.h"
 #include "ECU_level_functions.h"
 #include "SW_Watchdog.h"
+#include "hvcb.h"
 
 
 /* USER CODE END Includes */
@@ -55,32 +56,23 @@
 
 
 
-
+// flag for the LCD library
 uint8_t raw = 0u;
 
-bool start_fsm = 0;
-//volatile uint16_t ntc_value;
-volatile uint8_t ntc_temp;
-volatile char ntc_temp_buffer[26];
 FSM_HandleTypeDef hfsm;
 
 uint8_t volatile error_code = 30;
 
-
-CAN_RxHeaderTypeDef    RxHeader;
-uint32_t               txmailbox;
-uint8_t                RxData[8];
-uint32_t               rxfifo;
-
-
-//flag to know when a message is received in CAN
-bool volatile can_rx_flag = 0;
-
+//flag to solve a timer problem
 bool first_charge = 1;
+
+//flag to start the watchdog
+bool start_can_flag = 0;
+
+
 
 //Flag to know if it is the first code run to check if the CmdEn is still on 
 bool first_run = 1;
-uint32_t first_run_timestamp ;
 
 
 /* USER CODE END PD */
@@ -97,7 +89,7 @@ uint32_t first_run_timestamp ;
 
 /**
  * @brief Function to enable the FPU   */
-void SystemInit1(void)
+void FPU_Enable(void)
 {
     
   SCB->CPACR |= ((3UL << 20U)|(3UL << 22U));  /* set CP10 and CP11 Full Access */
@@ -141,7 +133,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  SystemInit1();
+  FPU_Enable();
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -188,9 +180,10 @@ I2C_LCD_Init(MyI2C_LCD);
     
   }
 
-
-//can_WD_setting();
-//can_WD_start();
+#ifdef Watchdog
+can_WD_set();
+can_WD_start();
+#endif
 
 
   /* USER CODE END 2 */
@@ -207,8 +200,25 @@ I2C_LCD_Init(MyI2C_LCD);
   IMD_AMS_error_handler();
   buzzer_routine();
   FSM_routine(&hfsm);
-  //watchdog_check();
 
+#ifdef Watchdog
+
+if (start_can_flag == 1){
+  if (SW_Watchdog_routine() != HAL_OK)  {
+
+    extern double               imd_err_is_active, ams_err_is_active; 
+    bool  volatile extern       index_error[number_of_struct];  
+
+    error_code = watch_dog_error;
+
+    if (index_error[5] == true){
+        imd_err_is_active = 1;
+        ams_err_is_active = 1;
+    }
+
+   }
+ }
+#endif
    
 
     
@@ -293,21 +303,21 @@ void Error_Handler(void)
     //STOP CHARGE
 
     ChargeENcmdOFF();
-    ChargeBlueLedOff;
-    WarnLedOn;
-    TSAC_fan_off;
+    ChargeBlueLedOff();
+    WarnLedOn();
+    TSAC_fan_off();
 
   //display error
     error_display();
-    buzzer_12khz;
+    buzzer_12khz();
 
     #ifndef silence
-    buzzer_on;
+    buzzer_on();
     #endif
 
     __enable_irq();
     HAL_Delay(2000);
-      buzzer_off;
+      buzzer_off();
     __disable_irq();
   
 

@@ -164,14 +164,14 @@ uint32_t _FSM_SCARRELLINO_FSM_IDLE_do_work() {
     extern bool first_run;
 
     if (first_run == 1){
-        if (ChargeEN != CHG_EN_REQ){
+        if (ChargeEN() != CHG_EN_REQ){
             first_run = 0;
         }
     }
 
     else{
 
-    if (ChargeEN == CHG_EN_REQ){ 
+    if (ChargeEN() == CHG_EN_REQ){ 
         if( 
             #ifdef debug
             (sdc_tsac_initial_in_is_active              == 0) &&
@@ -203,9 +203,9 @@ uint32_t _FSM_SCARRELLINO_FSM_IDLE_do_work() {
             (imp_ai_rs_signals_is_active                == 0) &&
             (imp_hv_relays_signals_is_active            == 0) &&
             (charge_temp                                < 60) &&
-          //  (error_code                                == 30) &&
-            (SDC_FUNGO                                  == SDC_active) &&  //TODO: remove this
-            (ChargeEN                                   == CHG_EN_REQ) )
+            //(error_code                                == 30) &&
+            (SDC_FUNGO()                               == SDC_active) &&  
+            (ChargeEN()                                == CHG_EN_REQ) )
            {
 
             next = FSM_SCARRELLINO_FSM_CHARGE;
@@ -258,10 +258,10 @@ uint32_t _FSM_SCARRELLINO_FSM_CHARGE_do_work() {
 
 
         if( (imp_ai_rs_signals_is_active                == 0) &&
-            //(error_code                                == 30) &&
+            //(error_code                                 == 30) &&
             (charge_temp                                < 60) &&
             (imp_hv_relays_signals_is_active            == 0) &&
-            (SDC_FUNGO                                  == SDC_active)&&
+            (SDC_FUNGO()                                == SDC_active)&&
             #ifdef debug
             (sdc_tsac_initial_in_is_active              == 0) &&
             (sdc_tsac_final_in_is_active                == 0) &&
@@ -277,7 +277,7 @@ uint32_t _FSM_SCARRELLINO_FSM_CHARGE_do_work() {
             (ams_err_is_active                          == 0) &&
             (imd_err_is_active                          == 0) &&
             #endif
-            (ChargeEN                                   == CHG_EN_REQ) )
+            (ChargeEN()                                   == CHG_EN_REQ) )
                
            {
                  #ifdef debug
@@ -293,7 +293,23 @@ uint32_t _FSM_SCARRELLINO_FSM_CHARGE_do_work() {
                  #endif
 
 
+                 #ifdef debug
+
                  next = FSM_SCARRELLINO_FSM_CHARGE;
+
+                 #else
+
+                 if (charge_control() == HAL_OK){
+                    next = FSM_SCARRELLINO_FSM_CHARGE;
+                    }
+
+                 else{
+                    next == FSM_SCARRELLINO_FSM_STOP_CHARGE;
+                     }
+
+                 
+
+                 #endif
            }
 
     else{
@@ -328,8 +344,7 @@ uint32_t _FSM_SCARRELLINO_FSM_STOP_CHARGE_event_handle(uint8_t event) {
 /** @brief wrapper of FSM_SCARRELLINO_FSM_do_work, with exit state checking */
 uint32_t _FSM_SCARRELLINO_FSM_STOP_CHARGE_do_work() {
     
-    stop_charge_routine();
-    
+    start_charge_delay();    
 
     uint32_t next = FSM_SCARRELLINO_FSM_DONE;
 
@@ -358,16 +373,16 @@ uint32_t _FSM_SCARRELLINO_FSM_DONE_event_handle(uint8_t event) {
 uint32_t _FSM_SCARRELLINO_FSM_DONE_do_work() {
     uint32_t next;
 
-    if (ChargeEN == 0){
+    if (ChargeEN() == 0){
         
         next = FSM_SCARRELLINO_FSM_DONE;
-        Stat3LedOn;
+        Stat3LedOn();
         
     }
 
     else{
         next = FSM_SCARRELLINO_FSM_IDLE;
-        Stat3LedOff;
+        Stat3LedOff();
 
     }
     

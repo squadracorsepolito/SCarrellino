@@ -1,8 +1,11 @@
 #include "main.h"
 
+
+/**
+ * @brief Struct to store the data about the Watchdog 
+ */
 typedef struct SW_Watchdog
 {
-char        name[60];
 //millisecond
 uint32_t    cycle_time;
 //millisecond
@@ -11,11 +14,12 @@ uint8_t     index;
 
 }SW_Watchdog_Typedef;
 
-#define             number_of_struct 9
+#define             number_of_struct 15
 
 
 
 void SW_Watchdog_set(SW_Watchdog_Typedef *info_struct);
-void SW_Watchdog_start(char *info_struct_name);
-HAL_StatusTypeDef SW_Wachdog_routine();
-void SW_Watchdog_Refresh(char *info_struct_name);
+void SW_Watchdog_start(SW_Watchdog_Typedef *info_struct);
+HAL_StatusTypeDef SW_Watchdog_routine();
+void SW_Watchdog_Refresh(SW_Watchdog_Typedef *info_struct);
+void can_WD_init(SW_Watchdog_Typedef *info_struct, uint32_t cycle_tyme);

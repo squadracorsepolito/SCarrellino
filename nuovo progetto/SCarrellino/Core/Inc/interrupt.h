@@ -9,5 +9,5 @@ typedef struct
 
 }can_message;
 
-#define can_message_rx_number 6
+#define can_message_rx_number 10
 

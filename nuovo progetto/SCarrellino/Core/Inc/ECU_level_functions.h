@@ -27,5 +27,18 @@ void TLB_Battery_signals_CAN_data_storage();
 void HV_BMS1_CAN_data_storage();
 void HV_BMS2_CAN_data_storage();
 void HV_BMS3_CAN_data_storage();
+void HV_BMS4_CAN_data_storage();
 void stop_charge_routine();
 void BRUSA_CAN_data_storage();
+bool charge_control();
+void can_WD_set();
+
+
+#define buffer_TLB_signals 4
+#define buffer_TLB_SDC 1
+#define buffer_BMS_HV_1 0
+#define buffer_BMS_HV_2 2
+#define buffer_BMS_HV_3 3
+#define buffer_BMS_HV_4 5
+
+

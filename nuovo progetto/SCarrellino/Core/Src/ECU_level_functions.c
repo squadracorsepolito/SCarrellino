@@ -16,15 +16,22 @@
 #include "hvcb.h"
 #include "interrupt.h"
 #include "ntc.h"
+#include "SW_Watchdog.h"
 
-extern  char ntc_temp_buffer[20];
 extern volatile uint8_t ntc_temp;
 extern volatile bool ADC_conv_flag;
 
-char state_buff[30];
 char state[15];
-char buff[24];
+char buff[30];
 extern FSM_HandleTypeDef hfsm;
+
+//Struct for the CAN Software Watchdog
+SW_Watchdog_Typedef HVCB_HVB_RX_V_CELL_FRAME,
+                    HVCB_HVB_RX_T_CELL_FRAME,
+                    HVCB_HVB_RX_SOC_FRAME,
+                    MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME,
+                    HVCB_HVB_RX_MEASURE_FRAME,
+                    MCB_TLB_BAT_SIGNALS_STATUS_FRAME;
 
 
 
@@ -61,9 +68,9 @@ if(ADC_conv_flag == 1){
         display_routine_1();
         break;
 
-    //case 2:
-    //    display_routine_2();
-    //    break;
+    case 2:
+        display_routine_2();
+        break;
 
     default:
         display_routine_0();
@@ -86,8 +93,8 @@ void display_routine_0(){
 
     //temperature extern
     I2C_LCD_Home(I2C_LCD);
-    sprintf(ntc_temp_buffer,"Ext Temp    : %d C ", ntc_temp);
-    I2C_LCD_WriteString(I2C_LCD, (char*) &ntc_temp_buffer);
+    sprintf(buff,"Ext Temp    : %d C ", ntc_temp);
+    I2C_LCD_WriteString(I2C_LCD, (char*) &buff);
     ADC_conv_flag = 0;
 
 
@@ -111,29 +118,30 @@ void display_routine_0(){
     }
 
 
-    sprintf(state_buff, "State : %s   ", state);
-    I2C_LCD_WriteString(I2C_LCD,(char *) &state_buff);
+    sprintf(buff, "State : %s   ", state);
+    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
 
 
     // state of charge
     I2C_LCD_ACapo(I2C_LCD);
-    sprintf(ntc_temp_buffer,"HV Batt SOC : %.1f%% ", (SOC*0.04 + 50));
-    I2C_LCD_WriteString(I2C_LCD, (char*) &ntc_temp_buffer);
+    sprintf(buff,"HV Batt SOC : %.1f%% ", SOC);
+    
+    I2C_LCD_WriteString(I2C_LCD, (char*) &buff);
 
 
     //charging temperature if it is in CHARGE state
     if (hfsm.current_state == 1){
         I2C_LCD_ACapo(I2C_LCD);
-        sprintf(ntc_temp_buffer,"Charge Temp : %.0f C ", charge_temp);
-        I2C_LCD_WriteString(I2C_LCD, (char*) &ntc_temp_buffer);
+        sprintf(buff,"Charge Temp : %.0f C ", charge_temp);
+        I2C_LCD_WriteString(I2C_LCD, (char*) &buff);
      
     }
 
     //Error code if it isn't in CHARGE state and there is an error
     else if(error_code != 30){
         I2C_LCD_ACapo(I2C_LCD);
-        sprintf(ntc_temp_buffer,"Error Code : %i    ", error_code);
-        I2C_LCD_WriteString(I2C_LCD, (char*) &ntc_temp_buffer);
+        sprintf(buff,"Error Code : %i    ", error_code);
+        I2C_LCD_WriteString(I2C_LCD, (char*) &buff);
 
     }
 
@@ -150,8 +158,8 @@ void display_routine_0(){
 
 /*
     I2C_LCD_ACapo(I2C_LCD);
-    sprintf(state_buff, "position = %d  ", position);
-    I2C_LCD_WriteString(I2C_LCD,(char *) &state_buff);
+    sprintf(buff, "position = %d  ", position);
+    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
 */
 
     //set the last page displayed
@@ -196,8 +204,8 @@ void display_routine_1(){
 
 
 /*
-    sprintf(state_buff, "position = %d  ", position);
-    I2C_LCD_WriteString(I2C_LCD,(char *) &state_buff);
+    sprintf(buff, "position = %d  ", position);
+    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
 */
 
     //set the last page displayed
@@ -205,6 +213,7 @@ void display_routine_1(){
 
 }
 
+double extern charging_curr;
 
 double extern I_out_rx, V_out_rx, mains_i_rx, mains_v_rx;
 
@@ -214,25 +223,26 @@ void display_routine_2(){
 
     I2C_LCD_Home(I2C_LCD);
 
-    sprintf(buff, "CHARGE");
+    sprintf(buff, "CHARGE CURRENT");
     I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
-    sprintf(buff, "V = %.2f I = %.2f", V_out_rx, I_out_rx);
+    sprintf(buff, "I = %.2f", charging_curr);
     I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
     I2C_LCD_ACapo(I2C_LCD);
 
-    sprintf(buff, "MAINS");
-    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
-    I2C_LCD_ACapo(I2C_LCD);
 
-    sprintf(buff, "V = %.2f I = %.2f", mains_v_rx, mains_i_rx);
-    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
-    I2C_LCD_ACapo(I2C_LCD);
+    //sprintf(buff, "MAINS");
+    //I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
+    //I2C_LCD_ACapo(I2C_LCD);
+//
+    //sprintf(buff, "V = %.2f I = %.2f", mains_v_rx, mains_i_rx);
+    //I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
+    //I2C_LCD_ACapo(I2C_LCD);
 
  /*   
-    sprintf(state_buff, "position = %d  ", position);
-    I2C_LCD_WriteString(I2C_LCD,(char *) &state_buff);
+    sprintf(buff, "position = %d  ", position);
+    I2C_LCD_WriteString(I2C_LCD,(char *) &buff);
 */
 
     //set the last page displayed
@@ -399,27 +409,27 @@ void buzzer_routine(){
         if(flag == 0){
 
             MilElapsed(1);
-            buzzer_800hz;
+            buzzer_800hz();
 
             #ifndef silence
-            buzzer_on;
+            buzzer_on();
             #endif
 
             flag = 1;
         }
 
         if ((MilElapsed(0) >= 300) & (flag == 1)){
-            buzzer_1khz;
+            buzzer_1khz();
             flag = 2;
             }
 
         if((MilElapsed(0) >= 600) & (flag == 2)){
-            buzzer_12khz;
+            buzzer_12khz();
             flag = 3;
         }
 
         if((MilElapsed(0) >= 900) & (flag == 3)){
-            buzzer_off;
+            buzzer_off();
             buzzer_charge_on = 0;
             flag = 0;
         }    
@@ -430,24 +440,24 @@ void buzzer_routine(){
 
         if(flag == 0){
             MilElapsed(1);
-            buzzer_12khz;
+            buzzer_12khz();
 
             #ifndef silence
-            buzzer_on;
+            buzzer_on();
             #endif
             
             flag = 1;
         }
         if ((MilElapsed(0) >= 300) & (flag == 1)){
-            buzzer_1khz;
+            buzzer_1khz();
             flag = 2;
             }
         if((MilElapsed(0) >= 600) & (flag == 2)){
-            buzzer_800hz;
+            buzzer_800hz();
             flag = 3;
         }
         if((MilElapsed(0) >= 900) & (flag == 3)){
-            buzzer_off;
+            buzzer_off();
             buzzer_stop_charge_on = 0;
             flag = 0;
         }    
@@ -496,25 +506,25 @@ void IMD_AMS_error_handler(){
     extern double imd_err_is_active, ams_err_is_active;                
                                                                        
      if(imd_err_is_active == 1){  
-       IMD_err_on;                                                     
-       WarnLedOn;                                                      
+       IMD_err_on();                                                     
+       WarnLedOn();                                                      
        }                                                               
                                                                        
      else{                                                             
-       IMD_err_off;                                                    
-       WarnLedOff;                                                     
+       IMD_err_off();                                                    
+       WarnLedOff();                                                     
      }                                                                 
                                                                        
                                                                        
      if(ams_err_is_active == 1)                                        
      {                                                                 
-       AMS_err_on;                                                     
-       WarnLedOn;                                                      
+       AMS_err_on();                                                     
+       WarnLedOn();                                                      
    }                                                                   
                                                                        
      else{                                                             
-       AMS_err_off;                                                    
-       WarnLedOff;                                                     
+       AMS_err_off();                                                    
+       WarnLedOff();                                                     
      }                                                                 
      }
 
@@ -526,14 +536,14 @@ void TSAC_FAN_Handler(){
     
     double extern charge_temp;
 
-    if(charge_temp <= 29) TSAC_fan_off;
+    if(charge_temp <= 29) TSAC_fan_off();
 
     if((charge_temp >= 31) & (charge_temp <= 39)) {
-        TSAC_fan_half;
+        TSAC_fan_half();
         }
 
     if(charge_temp >= 41) {
-        TSAC_fan_max;
+        TSAC_fan_max();
         } 
 }
 
@@ -599,24 +609,27 @@ void start_charge_delay(){
 }
 
 
+bool charge_on = 0;
+
 /**
  * @brief Action to do to start the charge after the delay set for the closing of the AIRs
  */
 void end_charge_delay(){
     
 
-    if(hfsm.current_state == 1){
-
-    ChargeENcmdON;
-    ChargeBlueLedOn;
-    HAL_TIM_Base_Stop_IT(&htim7);
+    if(hfsm.current_state == Charge){
+     
+    ChargeENcmdON();
+    ChargeBlueLedOn();
     __HAL_TIM_SET_COUNTER(&htim7, 0);
+    HAL_TIM_Base_Stop_IT(&htim7);
     }
 
-
     else{
-        HAL_TIM_Base_Stop_IT(&htim7);
+        ChargeENcmdOFF();
+        ChargeBlueLedOff();
         __HAL_TIM_SET_COUNTER(&htim7, 0);
+        HAL_TIM_Base_Stop_IT(&htim7);
         }
 
 }
@@ -633,7 +646,7 @@ int16_t volatile count = 0;
 //real value of the position of the rotary encoder
 int16_t volatile position = 0;
 
-uint8_t number_of_positions = 1;
+uint8_t number_of_positions = 2;
 
 /**
  * @brief IRQ that handles the rotary encoder 
@@ -652,8 +665,8 @@ void encoder_IRQ(){
 
 
 
-extern CAN_RxHeaderTypeDef    RxHeader;
-extern uint8_t                RxData[8];
+CAN_RxHeaderTypeDef    RxHeader;
+uint8_t                RxData[8];
 extern bool volatile          can_rx_flag;
 can_message            can_buffer[can_message_rx_number];
 
@@ -663,46 +676,46 @@ can_message            can_buffer[can_message_rx_number];
  */
 void MCB_FIFO1_RX_routine(){
 
-if (HAL_CAN_GetRxMessage(&MCB_CAN_HANDLE, CAN_RX_FIFO1, &RxHeader, (uint8_t *)&RxData) != HAL_OK) {
-            error_code = CAN_Rx_error;
-
-        }
-
-        else {
-            can_rx_flag = 1;
-
-            switch (RxHeader.StdId) {
-
-                    #ifdef BRUSA_on
-                    case NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID:
-                    
-                        can_buffer_brusa.id = NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID;
-                        for (uint8_t i = 0; i < 8; i++) can_buffer_brusa.data[i] = RxData[i];
-                        can_buffer_brusa.data_present = 1;
-                    
-                        break;
-
-                    #endif
-
-                case MCB_TLB_BAT_SIGNALS_STATUS_FRAME_ID:
-
-                    can_buffer[4].id = MCB_TLB_BAT_SIGNALS_STATUS_FRAME_ID;
-                    for (uint8_t i = 0; i < 8; i++)
-                        can_buffer[4].data[i] = RxData[i];
-                    can_buffer[4].data_present = 1;
-
-                    break;
-
-                case MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME_ID:
-
-                    can_buffer[1].id = MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME_ID;
-                    for (uint8_t i = 0; i < 8; i++)
-                        can_buffer[1].data[i] = RxData[i];
-                    can_buffer[1].data_present = 1;
-
-                    break;
+    if (HAL_CAN_GetRxMessage(&MCB_CAN_HANDLE, CAN_RX_FIFO1, &RxHeader, (uint8_t *)&RxData) != HAL_OK) {
+                error_code = CAN_Rx_error;
+    
             }
+
+    else {
+        can_rx_flag = 1;
+
+        switch (RxHeader.StdId) {
+
+                #ifdef BRUSA_on
+                case NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID:
+                
+                    can_buffer_brusa.id = NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME_ID;
+                    for (uint8_t i = 0; i < 8; i++) can_buffer_brusa.data[i] = RxData[i];
+                    can_buffer_brusa.data_present = 1;
+                
+                    break;
+
+                #endif
+
+            case MCB_TLB_BAT_SIGNALS_STATUS_FRAME_ID:
+
+                can_buffer[buffer_TLB_signals].id = MCB_TLB_BAT_SIGNALS_STATUS_FRAME_ID;
+                for (uint8_t i = 0; i < 8; i++)
+                    can_buffer[buffer_TLB_signals].data[i] = RxData[i];
+                    can_buffer[buffer_TLB_signals].data_present = 1;
+
+                break;
+
+            case MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME_ID:
+
+                can_buffer[buffer_TLB_SDC].id = MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME_ID;
+                for (uint8_t i = 0; i < 8; i++)
+                    can_buffer[buffer_TLB_SDC].data[i] = RxData[i];
+                    can_buffer[buffer_TLB_SDC].data_present = 1;
+
+                break;
         }
+    }
 
 }
 
@@ -716,29 +729,34 @@ void HVCB_FIFO1_RX_routine(){
 
     if (HAL_CAN_GetRxMessage(&HVCB_CAN_HANDLE, CAN_RX_FIFO1, &RxHeader, (uint8_t *)&RxData) != HAL_OK) {
             error_code = CAN_Rx_error;
-        } else {
-            can_rx_flag = 1;
+    } 
+    else {
+        can_rx_flag = 1;
 
-            switch (RxHeader.StdId) {
-                case HVCB_HVB_RX_T_CELL_FRAME_ID:
+        switch (RxHeader.StdId) {
+            case HVCB_HVB_RX_T_CELL_FRAME_ID:
 
-                    can_buffer[2].id = HVCB_HVB_RX_T_CELL_FRAME_ID;
-                    for (uint8_t i = 0; i < 8; i++)
-                        can_buffer[2].data[i] = RxData[i];
-                    can_buffer[2].data_present = 1;
+                can_buffer[buffer_BMS_HV_2].id = HVCB_HVB_RX_T_CELL_FRAME_ID;
+                for (uint8_t i = 0; i < 8; i++)
+                    can_buffer[buffer_BMS_HV_2].data[i] = RxData[i];
+                    can_buffer[buffer_BMS_HV_2].data_present = 1;
 
-                    break;
+                break;
 
-                case HVCB_HVB_RX_SOC_FRAME_ID:
+            case HVCB_HVB_RX_SOC_FRAME_ID:
 
-                    can_buffer[3].id = HVCB_HVB_RX_SOC_FRAME_ID;
-                    for (uint8_t i = 0; i < 8; i++)
-                        can_buffer[3].data[i] = RxData[i];
-                    can_buffer[3].data_present = 1;
+                can_buffer[buffer_BMS_HV_3].id = HVCB_HVB_RX_SOC_FRAME_ID;
+                for (uint8_t i = 0; i < 8; i++)
+                    can_buffer[buffer_BMS_HV_3].data[i] = RxData[i];
+                    can_buffer[buffer_BMS_HV_3].data_present = 1;
 
-                    break;
-            }
+                break;
+                
+            
+
+            
         }
+    }
 }
 
 
@@ -753,29 +771,38 @@ void HVCB_FIFO0_RX_routine(){
 
         }
 
-        else {
-            can_rx_flag = 1;
+    else {
+        can_rx_flag = 1;
 
-            switch (RxHeader.StdId) {
-                case HVCB_HVB_RX_V_CELL_FRAME_ID:
+        switch (RxHeader.StdId) {
+            case HVCB_HVB_RX_V_CELL_FRAME_ID:
 
-                    can_buffer[0].id = HVCB_HVB_RX_V_CELL_FRAME_ID;
-                    for (uint8_t i = 0; i < 8; i++)
-                        can_buffer[0].data[i] = RxData[i];
-                    can_buffer[0].data_present = 1;
+                can_buffer[buffer_BMS_HV_1].id = HVCB_HVB_RX_V_CELL_FRAME_ID;
+                for (uint8_t i = 0; i < 8; i++)
+                    can_buffer[buffer_BMS_HV_1].data[i] = RxData[i];
+                    can_buffer[buffer_BMS_HV_1].data_present = 1;
 
-                    break;
+                break;
 
-                    //case HVCB_HVB_RX_DIAGNOSIS_FRAME_ID:
-                    //
-                    //    can_buffer[5].id = HVCB_HVB_RX_DIAGNOSIS_FRAME_ID;
-                    //    for (uint8_t i = 0; i < 8; i++) can_buffer[5].data[i] = RxData[i];
-                    //    can_buffer[5].data_present = 1;
-                    //
-                    //    break;
-                    //}
-            }
+            case HVCB_HVB_RX_MEASURE_FRAME_ID:
+
+                can_buffer[buffer_BMS_HV_4].id = HVCB_HVB_RX_MEASURE_FRAME_ID;
+                for (uint8_t i = 0; i < 8; i++)
+                    can_buffer[buffer_BMS_HV_4].data[i] = RxData[i];
+                    can_buffer[buffer_BMS_HV_4].data_present = 1;
+
+                break;
+
+                //case HVCB_HVB_RX_DIAGNOSIS_FRAME_ID:
+                //
+                //    can_buffer[5].id = HVCB_HVB_RX_DIAGNOSIS_FRAME_ID;
+                //    for (uint8_t i = 0; i < 8; i++) can_buffer[5].data[i] = RxData[i];
+                //    can_buffer[5].data_present = 1;
+                //
+                //    break;
+                //}
         }
+    }
 }
 
 
@@ -868,6 +895,7 @@ struct hvcb_hvb_rx_v_cell_t              v_cell_rx;
 
 struct         hvcb_hvb_rx_t_cell_t              t_cell;
 struct         hvcb_hvb_rx_soc_t                 SOC_struct_rx;
+struct         hvcb_hvb_rx_measure_t             curr_measure;
 double extern  SOC;
 
 
@@ -875,21 +903,24 @@ double extern  SOC;
 
 void TLB_Battery_SDC_CAN_data_storage(){
 
-    if(can_buffer[1].data_present == 1){
+    if(can_buffer[buffer_TLB_SDC].data_present == 1){
 
-        //SW_Watchdog_Refresh("MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME");
+        #ifdef Watchdog
+        SW_Watchdog_Refresh(&MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME);
+        #endif
         
-        can_buffer[1].data_present = 0;
+        can_buffer[buffer_TLB_SDC].data_present = 0;
 
         mcb_tlb_bat_sd_csensing_status_init(&tlb_scd_rx);
-        mcb_tlb_bat_sd_csensing_status_unpack(&tlb_scd_rx,(uint8_t *) &can_buffer[1].data, MCB_TLB_BAT_SD_CSENSING_STATUS_LENGTH);
+        mcb_tlb_bat_sd_csensing_status_unpack(&tlb_scd_rx,(uint8_t *) &can_buffer[buffer_TLB_SDC].data, MCB_TLB_BAT_SD_CSENSING_STATUS_LENGTH);
 
         
 
         sdc_tsac_initial_in_is_active = mcb_tlb_bat_sd_csensing_status_sdc_tsac_initial_in_is_active_decode(tlb_scd_rx.sdc_tsac_initial_in_is_active);
         sdc_post_ams_imd_relay_is_active = mcb_tlb_bat_sd_csensing_status_sdc_post_ams_imd_relay_is_active_decode(tlb_scd_rx.sdc_post_ams_imd_relay_is_active);
         sdc_tsac_final_in_is_active = mcb_tlb_bat_sd_csensing_status_sdc_tsac_final_in_is_active_decode(tlb_scd_rx.sdc_tsac_final_in_is_active);
-        sdc_prch_rly_is_closed = mcb_tlb_bat_sd_csensing_status_sdc_prch_rly_is_closed_decode(tlb_scd_rx.sdc_prch_rly_is_closed);
+        
+        sdc_prch_rly_is_closed = mcb_tlb_bat_sd_csensing_status_sdc_prech_bypass_relay_is_closed_decode(tlb_scd_rx.sdc_prech_bypass_relay_is_closed);
         
 
         
@@ -926,17 +957,19 @@ void TLB_Battery_signals_CAN_data_storage(){
                     imp_hv_relays_signals_is_active         ,
                     tsal_green_is_active                    ; 
 
-    if(can_buffer[4].data_present == 1){
+    if(can_buffer[buffer_TLB_signals].data_present == 1){
 
-            //SW_Watchdog_Refresh("MCB_TLB_BAT_SIGNALS_STATUS_FRAME");
+            #ifdef Watchdog
+            SW_Watchdog_Refresh(&MCB_TLB_BAT_SIGNALS_STATUS_FRAME);
+            #endif
 
 
-            can_buffer[4].data_present = 0;
+            can_buffer[buffer_TLB_signals].data_present = 0;
 
             struct mcb_tlb_bat_signals_status_t static tlb_signals;
 
             mcb_tlb_bat_signals_status_init(&tlb_signals);
-            mcb_tlb_bat_signals_status_unpack(&tlb_signals,(uint8_t* ) &can_buffer[4].data,MCB_TLB_BAT_SIGNALS_STATUS_LENGTH);
+            mcb_tlb_bat_signals_status_unpack(&tlb_signals,(uint8_t* ) &can_buffer[buffer_TLB_signals].data,MCB_TLB_BAT_SIGNALS_STATUS_LENGTH);
 
             air_neg_cmd_is_active                      = mcb_tlb_bat_signals_status_air_neg_cmd_is_active_decode(tlb_signals.air_neg_cmd_is_active); 
             air_neg_is_closed                          = mcb_tlb_bat_signals_status_air_neg_is_closed_decode(tlb_signals.air_neg_is_closed);
@@ -949,9 +982,9 @@ void TLB_Battery_signals_CAN_data_storage(){
             dcbus_prech_rly_cmd_is_active              = mcb_tlb_bat_signals_status_dcbus_prech_rly_cmd_is_active_decode(tlb_signals.dcbus_prech_rly_cmd_is_active);
             dcbus_prech_rly_is_closed                  = mcb_tlb_bat_signals_status_dcbus_prech_rly_is_closed_decode(tlb_signals.dcbus_prech_rly_is_closed);
             imd_err_is_active                          = mcb_tlb_bat_signals_status_imd_err_is_active_decode(tlb_signals.imd_err_is_active);
-            imp_ai_rs_signals_is_active                = mcb_tlb_bat_signals_status_imp_ai_rs_signals_is_active_decode(tlb_signals.imp_ai_rs_signals_is_active);
+            imp_ai_rs_signals_is_active                = mcb_tlb_bat_signals_status_imp_dcbus_is_active_decode(tlb_signals.imp_dcbus_is_active);
             imp_any_is_active                          = mcb_tlb_bat_signals_status_imp_any_is_active_decode(tlb_signals.imp_any_is_active);
-            imp_hv_relays_signals_is_active            = mcb_tlb_bat_signals_status_imp_hv_relays_signals_is_active_decode(tlb_signals.imp_hv_relays_signals_is_active);
+            imp_hv_relays_signals_is_active            = mcb_tlb_bat_signals_status_imp_hv_relays_state_is_active_decode(tlb_signals.imp_hv_relays_state_is_active);
             tsal_green_is_active                       = mcb_tlb_bat_signals_status_tsal_green_is_active_decode(tlb_signals.tsal_green_is_active);
 
 
@@ -995,14 +1028,16 @@ void TLB_Battery_signals_CAN_data_storage(){
 
 void HV_BMS1_CAN_data_storage(){
 
-    if (can_buffer[0].data_present == 1){
+    if (can_buffer[buffer_BMS_HV_1].data_present == 1){
 
-            //SW_Watchdog_Refresh("HVCB_HVB_RX_V_CELL_FRAME");
+            #ifdef Watchdog
+            SW_Watchdog_Refresh(&HVCB_HVB_RX_V_CELL_FRAME);
+            #endif
 
-            can_buffer[0].data_present = 0;
+            can_buffer[buffer_BMS_HV_1].data_present = 0;
 
             hvcb_hvb_rx_v_cell_init(&v_cell_rx);
-            hvcb_hvb_rx_v_cell_unpack(&v_cell_rx,(uint8_t *) &can_buffer[0].data, HVCB_HVB_RX_V_CELL_LENGTH);
+            hvcb_hvb_rx_v_cell_unpack(&v_cell_rx,(uint8_t *) &can_buffer[buffer_BMS_HV_1].data, HVCB_HVB_RX_V_CELL_LENGTH);
 
             v_max_id_rx = hvcb_hvb_rx_v_cell_hvb_idx_cell_u_max_decode(v_cell_rx.hvb_idx_cell_u_max);
             v_min_id_rx = hvcb_hvb_rx_v_cell_hvb_idx_cell_u_min_decode(v_cell_rx.hvb_idx_cell_u_min);
@@ -1021,14 +1056,20 @@ void HV_BMS1_CAN_data_storage(){
 void HV_BMS2_CAN_data_storage(){
 
     double extern charge_temp;
+    extern bool start_can_flag;
 
-    if (can_buffer[2].data_present == 1){
+    start_can_flag = 1 ;
 
-           //SW_Watchdog_Refresh("HVCB_HVB_RX_T_CELL_FRAME");
-            can_buffer[2].data_present = 0;
+    if (can_buffer[buffer_BMS_HV_2].data_present == 1){
+
+            #ifdef Watchdog
+            SW_Watchdog_Refresh(&HVCB_HVB_RX_T_CELL_FRAME);
+            #endif
+
+            can_buffer[buffer_BMS_HV_2].data_present = 0;
 
             hvcb_hvb_rx_t_cell_init(&t_cell);
-            hvcb_hvb_rx_t_cell_unpack(&t_cell, (uint8_t *) &can_buffer[2].data, HVCB_HVB_RX_T_CELL_LENGTH);
+            hvcb_hvb_rx_t_cell_unpack(&t_cell, (uint8_t *) &can_buffer[buffer_BMS_HV_2].data, HVCB_HVB_RX_T_CELL_LENGTH);
 
             charge_temp = hvcb_hvb_rx_t_cell_hvb_t_cell_max_decode(t_cell.hvb_t_cell_max);
 
@@ -1041,14 +1082,16 @@ void HV_BMS2_CAN_data_storage(){
 
 void HV_BMS3_CAN_data_storage(){
 
-        if(can_buffer[3].data_present == 1){
+        if(can_buffer[buffer_BMS_HV_3].data_present == 1){
+            
+            #ifdef Watchdog
+            SW_Watchdog_Refresh(&HVCB_HVB_RX_SOC_FRAME);
+            #endif
 
-            //SW_Watchdog_Refresh("HVCB_HVB_RX_SOC_FRAME");
-
-            can_buffer[3].data_present = 0;
+            can_buffer[buffer_BMS_HV_3].data_present = 0;
 
             hvcb_hvb_rx_soc_init(&SOC_struct_rx);
-            hvcb_hvb_rx_soc_unpack(&SOC_struct_rx, (uint8_t* ) &can_buffer[3].data, HVCB_HVB_RX_SOC_LENGTH);
+            hvcb_hvb_rx_soc_unpack(&SOC_struct_rx, (uint8_t* ) &can_buffer[buffer_BMS_HV_3].data, HVCB_HVB_RX_SOC_LENGTH);
 
             SOC = hvcb_hvb_rx_soc_hvb_r_so_c_hvb_u_cell_min_decode(SOC_struct_rx.hvb_r_so_c_hvb_u_cell_min);
 
@@ -1074,7 +1117,9 @@ struct nlg5_database_can_nlg5_act_i_t    brusa_rx_voltage;
 void BRUSA_CAN_data_storage(){
     if(can_buffer_brusa.data_present == 1){
 
-            //SW_Watchdog_Refresh("NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME");
+            #ifdef Watchdog
+            SW_Watchdog_Refresh(&NLG5_DATABASE_CAN_NLG5_ACT_I_FRAME);
+            #endif
 
             
             can_buffer_brusa.data_present = 0;
@@ -1101,8 +1146,66 @@ void BRUSA_CAN_data_storage(){
 void stop_charge_routine(){
 
     ChargeENcmdOFF();
-    TSAC_fan_off;
-    ChargeBlueLedOff;
+    TSAC_fan_off();
+    ChargeBlueLedOff();
     buzzer_stop_charge_on = 1;
     AIR_CAN_Cmd = 0;
+}
+
+
+
+
+void HV_BMS4_CAN_data_storage(){
+
+    if(can_buffer[buffer_BMS_HV_4].data_present == 1){
+
+        #ifdef Watchdog
+        SW_Watchdog_Refresh(&HVCB_HVB_RX_MEASURE_FRAME);
+        #endif
+
+        can_buffer[buffer_BMS_HV_4].data_present = 0;
+
+        hvcb_hvb_rx_measure_init(&curr_measure);
+        hvcb_hvb_rx_measure_unpack(&curr_measure, (uint8_t* ) &can_buffer[buffer_BMS_HV_4].data, HVCB_HVB_RX_MEASURE_LENGTH);
+
+        charging_curr = hvcb_hvb_rx_measure_hvb_i_hvb_decode(curr_measure.hvb_i_hvb);
+
+
+    }
+
+
+}
+
+
+bool charge_control(){
+
+    if( ChargeENcmdState() == ON){
+
+        if (charging_curr < 0.5)   return HAL_ERROR;
+            
+        else{    
+            return HAL_OK;
+            }
+    }
+         
+    else{
+        return HAL_OK;
+        }                 
+}
+
+
+
+
+/**
+ * @brief Function thath sets all the watchdog
+ */
+void can_WD_set(){
+
+can_WD_init(&HVCB_HVB_RX_V_CELL_FRAME, HVCB_HVB_RX_V_CELL_CYCLE_TIME_MS);
+can_WD_init(&HVCB_HVB_RX_T_CELL_FRAME, HVCB_HVB_RX_T_CELL_CYCLE_TIME_MS);
+can_WD_init(&HVCB_HVB_RX_SOC_FRAME, HVCB_HVB_RX_SOC_CYCLE_TIME_MS);
+can_WD_init(&HVCB_HVB_RX_MEASURE_FRAME, HVCB_HVB_RX_MEASURE_CYCLE_TIME_MS);
+can_WD_init(&MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME, MCB_TLB_BAT_SD_CSENSING_STATUS_CYCLE_TIME_MS);
+can_WD_init(&MCB_TLB_BAT_SIGNALS_STATUS_FRAME, MCB_TLB_BAT_SIGNALS_STATUS_CYCLE_TIME_MS);
+
 }
