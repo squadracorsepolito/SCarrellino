@@ -1,0 +1,4 @@
+[submodule "SCan"]
+	path = ./Lib/SCan
+	url = https://github.com/squadracorsepolito/SCan.git
+	branch = build

@@ -3,7 +3,7 @@
         {
             "showDevDebugOutput": "parsed",
             "cwd": "${workspaceRoot}",
-            "executable": "./build/SCarrellino23.elf",
+            "executable": "./build/SCarrellino_test.elf",
             "name": "Debug STM32",
             "request": "launch",
             "type": "cortex-debug",
@@ -12,13 +12,12 @@
             "device": "stm32f446",
             "configFiles": [
                 "openocd.cfg"
-            ],
-            "svdFile": "STM32F446.svd"
+            ]
         },
         {
             "showDevDebugOutput": "parsed",
             "cwd": "${workspaceRoot}",
-            "executable": "./build/SCarrellino23.elf",
+            "executable": "./build/SCarrellino_test.elf",
             "name": "Attach STM32",
             "request": "attach",
             "type": "cortex-debug",
@@ -27,8 +26,7 @@
             "device": "stm32f446",
             "configFiles": [
                 "openocd.cfg"
-            ],
-            "svdFile": "STM32F446.svd"
+            ]
         }
     ]
 }
