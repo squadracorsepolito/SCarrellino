@@ -9,10 +9,10 @@ void display_routine_1();
 void display_routine_2();
 void encoder_position_adjustment();
 void error_display();
-uint32_t MilElapsed(bool reset);
+uint32_t MilElapsed(uint8_t reset);
 void buzzer_routine();
 void IMD_AMS_error_handler();
-void TSAC_FAN_Handler();
+void TSAC_FAN_routine();
 void can_tx_routine();
 void start_charge_delay();
 void end_charge_delay();
@@ -30,8 +30,10 @@ void HV_BMS3_CAN_data_storage();
 void HV_BMS4_CAN_data_storage();
 void stop_charge_routine();
 void BRUSA_CAN_data_storage();
-bool charge_control();
+uint8_t charge_control();
 void can_WD_set();
+uint8_t ChargeEN_RisingEdge();
+uint8_t ChargeEN_FallingEdge();
 
 
 #define buffer_TLB_signals 4
@@ -40,5 +42,6 @@ void can_WD_set();
 #define buffer_BMS_HV_2 2
 #define buffer_BMS_HV_3 3
 #define buffer_BMS_HV_4 5
+#define CHG_EN_REQ 0U
 
 

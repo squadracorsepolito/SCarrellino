@@ -11,6 +11,10 @@
 # ------------------------------------------------
 
 ######################################
+# FLASH VIA CANBUS CAN-ids of devices
+######################################
+CANID_XCP_HOST_TO_TARGET__HEX=286
+CANID_XCP_TARGET_TO_HOST__HEX=468
 # target
 ######################################
 TARGET = SCarrellino
@@ -28,47 +32,65 @@ OPT = -Og
 #######################################
 # Build path
 BUILD_DIR = build
+# Release path
+RELEASE_DIR = release
+# Bootloader path
+BOOTLOADER_DIR = openblt_f446re
 
 ######################################
 # source
 ######################################
 # C sources
 C_SOURCES =  \
-Core/Src/main.c \
+Core/Src/ECU_level_functions.c \
+Core/Src/I2C_LCD.c \
+Core/Src/I2C_LCD_cfg.c \
+Core/Src/SW_Watchdog.c \
+Core/Src/Util.c \
+Core/Src/adc.c \
+Core/Src/can.c \
+Core/Src/can_functions.c \
+Core/Src/dma.c \
+Core/Src/fsm.c \
 Core/Src/gpio.c \
-Core/Src/stm32f4xx_it.c \
+Core/Src/hvcb.c \
+Core/Src/i2c.c \
+Core/Src/interrupt.c \
+Core/Src/main.c \
+Core/Src/nlg5_database_can.c \
+Core/Src/ntc.c \
+Core/Src/scarrellino_fsm_weak.c \
+Core/Src/scarrellino_fsm.c \
 Core/Src/stm32f4xx_hal_msp.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c \
+Core/Src/stm32f4xx_it.c \
+Core/Src/syscalls.c \
+Core/Src/sysmem.c \
+Core/Src/system_stm32f4xx.c \
+Core/Src/tim.c \
+Core/Src/usart.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_can.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c \
-Core/Src/system_stm32f4xx.c \
-Core/Src/usart.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c \
-Core/Src/adc.c \
-Core/Src/i2c.c \
-Core/Src/tim.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c \
-Core/Src/dma.c \
-Core/Src/can.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_can.c \
-Core/Src/sysmem.c \
-Core/Src/syscalls.c
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c \
+Lib/SCan/SC24/artifacts/MCB/c_source/mcb.c
 
 # ASM sources
 ASM_SOURCES =  \
@@ -96,6 +118,7 @@ SZ = $(PREFIX)size
 endif
 HEX = $(CP) -O ihex
 BIN = $(CP) -O binary -S
+SREC = $(CP) -O srec -S
  
 #######################################
 # CFLAGS
@@ -121,6 +144,7 @@ C_DEFS =  \
 -DUSE_HAL_DRIVER \
 -DSTM32F446xx
 
+
 # AS includes
 AS_INCLUDES = 
 
@@ -130,18 +154,25 @@ C_INCLUDES =  \
 -IDrivers/STM32F4xx_HAL_Driver/Inc \
 -IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \
 -IDrivers/CMSIS/Device/ST/STM32F4xx/Include \
--IDrivers/CMSIS/Include
+-IDrivers/CMSIS/Include \
+-ILib/SCan/SC24/artifacts/MCB/c_source/
 
 # compile gcc flags
-ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
-CFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections 
+ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections -fstack-usage
+
+CFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections -fstack-usage
 
 ifeq ($(DEBUG), 1)
-CFLAGS += -g -gdwarf-2
+CFLAGS += -g -gdwarf -ggdb
 endif
+
+# Add additional flags
+CFLAGS += -Wall -fdata-sections -ffunction-sections 
+ASFLAGS += -Wall -fdata-sections -ffunction-sections 
 
 # Generate dependency information
 CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
+
 
 #######################################
 # LDFLAGS
@@ -151,11 +182,16 @@ LDSCRIPT = STM32F446RETx_FLASH.ld
 
 # libraries
 LIBS = -lc -lm -lnosys 
-LIBDIR = 
-LDFLAGS = $(MCU) -specs=nano.specs -u_printf_float -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections 
+LIBDIR = \
+
+# Additional LD Flags from config file
+ADDITIONALLDFLAGS = -Wl,--print-memory-usage -specs=nano.specs -u_printf_float 
+
+LDFLAGS = $(MCU) $(ADDITIONALLDFLAGS) -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all
 all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
+
 
 #######################################
 # build the application
@@ -186,16 +222,90 @@ $(BUILD_DIR)/%.hex: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	
 $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf | $(BUILD_DIR)
 	$(BIN) $< $@
-	
+
 $(BUILD_DIR):
-	mkdir $@		
+	mkdir $@
+
+#######################################
+# custom makefile rules
+#######################################
+
+# The openocd bin path can be either defined in make command via OPENOCD_PATH variable (> make OPENOCD_PATH=xxx)
+# either it can be added to the PATH environment variable.
+ifdef OPENOCD_PATH
+OPENOCD = "$(OPENOCD_PATH)/openocd"
+else
+OPENOCD = "openocd"
+endif
+
+#######################################
+# flash
+#######################################
+flash: openocd.cfg $(BUILD_DIR)/$(TARGET).elf
+	$(OPENOCD) -f ./openocd.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
+
+#######################################
+# erase
+#######################################
+erase: openocd.cfg $(BUILD_DIR)/$(TARGET).elf
+	$(OPENOCD) -f ./openocd.cfg -c "init; reset halt; stm32f4x mass_erase 0; exit"
 
 #######################################
 # clean up
 #######################################
 clean:
-	-rm -fR $(BUILD_DIR)
-  
+	-rm -fR $(BUILD_DIR) $(RELEASE_DIR)
+
+
+#######################################
+# can_build
+#######################################
+can_build: $(BUILD_DIR)/$(TARGET)_shifted.sx
+	
+
+#######################################
+# $(BUILD_DIR)/$(TARGET)_shifted.elf
+#######################################
+$(BUILD_DIR)/$(TARGET)_shifted.elf: $(OBJECTS) | $(BUILD_DIR)
+	$(CC) $(OBJECTS) $(MCU) $(ADDITIONALLDFLAGS) -TSTM32F446RETx_FLASH_shifted.ld $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections -o $@
+
+
+#######################################
+# $(BUILD_DIR)/$(TARGET)_shifted.bin
+#######################################
+$(BUILD_DIR)/$(TARGET)_shifted.bin: $(BUILD_DIR)/$(TARGET)_shifted.elf | $(BUILD_DIR)
+	$(BIN) $< $@
+
+#######################################
+# $(BUILD_DIR)/$(TARGET)_shifted.sx (SREC format used for flashing via can)
+#######################################
+$(BUILD_DIR)/$(TARGET)_shifted.sx: $(BUILD_DIR)/$(TARGET)_shifted.elf | $(BUILD_DIR)
+	$(SREC) $< $@	
+	$(SZ) $@
+
+# The openocd bin path can be either defined in make command via BOOTCOMMANDER_PATH variable (> make BOOTCOMMANDER_PATH=xxx)
+# either it can be added to the PATH environment variable.
+ifdef BOOTCOMMANDER_PATH
+BOOTCOMMANDER = "$(BOOTCOMMANDER_PATH)/BootCommander"
+else
+BOOTCOMMANDER = "BootCommander"
+endif
+
+#######################################
+# can_flash
+#######################################
+can_flash: $(BUILD_DIR)/$(TARGET)_shifted.sx
+	$(BOOTCOMMANDER) -t=xcp_can -d=can0 -b=1000000 -tid="$(CANID_XCP_HOST_TO_TARGET__HEX)h" -rid="$(CANID_XCP_TARGET_TO_HOST__HEX)h" $(BUILD_DIR)/$(TARGET)_shifted.sx
+
+#######################################
+# release 
+#######################################
+$(BOOTLOADER_DIR)/release/* : 
+	$(MAKE) -C $(BOOTLOADER_DIR) release
+
+release: $(BUILD_DIR)/$(TARGET)_shifted.sx $(BUILD_DIR)/$(TARGET).elf $(BOOTLOADER_DIR)/release/*
+	mkdir -p $(RELEASE_DIR) && cp $^ $(RELEASE_DIR)
+
 #######################################
 # dependencies
 #######################################

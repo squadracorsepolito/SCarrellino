@@ -18,29 +18,27 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+
 #include "adc.h"
 #include "can.h"
 #include "dma.h"
+#include "gpio.h"
 #include "i2c.h"
 #include "tim.h"
 #include "usart.h"
-#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "fsm.h"
-#include "scarrellino_fsm.h"
-#include "stdbool.h"
-#include "string.h"
-#include "I2C_LCD.h"
-#include "ntc.h"
-#include "mcb.h"
-#include "can_functions.h"
-#include "string.h"
 #include "ECU_level_functions.h"
+#include "I2C_LCD.h"
 #include "SW_Watchdog.h"
+#include "can_functions.h"
+#include "fsm.h"
 #include "hvcb.h"
-
+#include "mcb.h"
+#include "ntc.h"
+#include "scarrellino_fsm.h"
+#include "string.h"
 
 /* USER CODE END Includes */
 
@@ -53,9 +51,6 @@
 /* USER CODE BEGIN PD */
 #define MyI2C_LCD I2C_LCD
 
-
-
-
 // flag for the LCD library
 uint8_t raw = 0u;
 
@@ -64,16 +59,13 @@ FSM_HandleTypeDef hfsm;
 uint8_t volatile error_code = 30;
 
 //flag to solve a timer problem
-bool first_charge = 1;
+uint8_t first_charge = 1;
 
 //flag to start the watchdog
-bool start_can_flag = 0;
+uint8_t start_can_flag = 0;
 
-
-
-//Flag to know if it is the first code run to check if the CmdEn is still on 
-bool first_run = 1;
-
+//Flag to know if it is the first code run to check if the CmdEn is still on
+uint8_t first_run = 1;
 
 /* USER CODE END PD */
 
@@ -85,16 +77,6 @@ bool first_run = 1;
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
-
-/**
- * @brief Function to enable the FPU   */
-void FPU_Enable(void)
-{
-    
-  SCB->CPACR |= ((3UL << 20U)|(3UL << 22U));  /* set CP10 and CP11 Full Access */
-   
-}
 
 /* USER CODE END PV */
 
@@ -112,179 +94,156 @@ void SystemClock_Config(void);
   * @brief  The application entry point.
   * @retval int
   */
-int main(void)
-{
-  /* USER CODE BEGIN 1 */
- 
+int main(void) {
+    /* USER CODE BEGIN 1 */
 
+    /* USER CODE END 1 */
 
-  /* USER CODE END 1 */
+    /* MCU Configuration--------------------------------------------------------*/
 
-  /* MCU Configuration--------------------------------------------------------*/
+    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+    HAL_Init();
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+    /* USER CODE BEGIN Init */
 
-  /* USER CODE BEGIN Init */
+    /* USER CODE END Init */
 
-  /* USER CODE END Init */
+    /* Configure the system clock */
+    SystemClock_Config();
 
-  /* Configure the system clock */
-  SystemClock_Config();
+    /* USER CODE BEGIN SysInit */
+    /* USER CODE END SysInit */
 
-  /* USER CODE BEGIN SysInit */
-  FPU_Enable();
-  /* USER CODE END SysInit */
+    /* Initialize all configured peripherals */
+    MX_GPIO_Init();
+    MX_DMA_Init();
+    MX_CAN1_Init();
+    MX_TIM4_Init();
+    MX_ADC1_Init();
+    MX_CAN2_Init();
+    MX_I2C3_Init();
+    MX_TIM1_Init();
+    MX_TIM3_Init();
+    MX_TIM8_Init();
+    MX_TIM9_Init();
+    MX_TIM12_Init();
+    MX_TIM2_Init();
+    MX_USART3_UART_Init();
+    MX_TIM6_Init();
+    MX_TIM7_Init();
+    /* USER CODE BEGIN 2 */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_CAN1_Init();
-  MX_TIM4_Init();
-  MX_ADC1_Init();
-  MX_CAN2_Init();
-  MX_I2C3_Init();
-  MX_TIM1_Init();
-  MX_TIM3_Init();
-  MX_TIM8_Init();
-  MX_TIM9_Init();
-  MX_TIM12_Init();
-  MX_TIM2_Init();
-  MX_USART3_UART_Init();
-  MX_TIM6_Init();
-  MX_TIM7_Init();
-  /* USER CODE BEGIN 2 */
+    I2C_LCD_Init(MyI2C_LCD);
 
+    //HAL_TIM_Encoder_Start_IT(&htim3, TIM_CHANNEL_ALL);
 
-I2C_LCD_Init(MyI2C_LCD);
+    //timer for adc conversions
+    //HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_4);
+    //HAL_ADC_Start_DMA(&hadc1, (uint32_t *) &ntc_value, 1);
+    //can command TX
+    //HAL_TIM_Base_Start_IT(&htim6);
 
+    //fsm
+    uint8_t n_events = 0;
 
-//HAL_TIM_Encoder_Start_IT(&htim3, TIM_CHANNEL_ALL);
-
-//timer for adc conversions
-//HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_4);
-//HAL_ADC_Start_DMA(&hadc1, (uint32_t *) &ntc_value, 1);
-//can command TX
-//HAL_TIM_Base_Start_IT(&htim6);
-
-
-//fsm
-  uint8_t n_events = 0;
- 
-  if (FSM_SCARRELLINO_FSM_init(&hfsm, n_events, run_callback_1, transition_callback_1) != STMLIBS_OK){
-    error_code = init_fsm_error;
-    
-  }
-  if (FSM_start(&hfsm) != STMLIBS_OK){
-    error_code = fsm_start_error;
-    
-  }
-
-#ifdef Watchdog
-can_WD_set();
-can_WD_start();
-#endif
-
-
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-  
-  
-  can_rx_routine();
-  can_tx_routine();
-  display_routine();
-  IMD_AMS_error_handler();
-  buzzer_routine();
-  FSM_routine(&hfsm);
-
-#ifdef Watchdog
-
-if (start_can_flag == 1){
-  if (SW_Watchdog_routine() != HAL_OK)  {
-
-    extern double               imd_err_is_active, ams_err_is_active; 
-    bool  volatile extern       index_error[number_of_struct];  
-
-    error_code = watch_dog_error;
-
-    if (index_error[5] == true){
-        imd_err_is_active = 1;
-        ams_err_is_active = 1;
+    if (FSM_SCARRELLINO_FSM_init(&hfsm, n_events, run_callback_1, transition_callback_1) != STMLIBS_OK) {
+        error_code = init_fsm_error;
+    }
+    if (FSM_start(&hfsm) != STMLIBS_OK) {
+        error_code = fsm_start_error;
     }
 
-   }
- }
+#ifdef Watchdog
+    can_WD_set();
+    can_WD_start();
 #endif
-   
 
-    
+    /* USER CODE END 2 */
 
-    /* USER CODE END WHILE */
+    /* Infinite loop */
+    /* USER CODE BEGIN WHILE */
+    while (1) {
+        can_rx_routine();
+        can_tx_routine();
+        display_routine();
+        IMD_AMS_error_handler();
+        buzzer_routine();
+        FSM_routine(&hfsm);
+        TSAC_FAN_routine();
 
-    /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
+#ifdef Watchdog
+
+        if (start_can_flag == 1) {
+            if (SW_Watchdog_routine() != HAL_OK) {
+                extern double imd_err_is_active, ams_err_is_active;
+                uint8_t volatile extern index_error[number_of_struct];
+
+                error_code = watch_dog_error;
+
+                if (index_error[5] == true) {
+                    imd_err_is_active = 1;
+                    ams_err_is_active = 1;
+                }
+            }
+        }
+#endif
+
+        /* USER CODE END WHILE */
+
+        /* USER CODE BEGIN 3 */
+    }
+    /* USER CODE END 3 */
 }
 
 /**
   * @brief System Clock Configuration
   * @retval None
   */
-void SystemClock_Config(void)
-{
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+void SystemClock_Config(void) {
+    RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+    RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /** Configure the main internal regulator output voltage
+    /** Configure the main internal regulator output voltage
   */
-  __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+    __HAL_RCC_PWR_CLK_ENABLE();
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-  /** Initializes the RCC Oscillators according to the specified parameters
+    /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 4;
-  RCC_OscInitStruct.PLL.PLLN = 180;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 2;
-  RCC_OscInitStruct.PLL.PLLR = 2;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+    RCC_OscInitStruct.HSEState       = RCC_HSE_ON;
+    RCC_OscInitStruct.PLL.PLLState   = RCC_PLL_ON;
+    RCC_OscInitStruct.PLL.PLLSource  = RCC_PLLSOURCE_HSE;
+    RCC_OscInitStruct.PLL.PLLM       = 4;
+    RCC_OscInitStruct.PLL.PLLN       = 180;
+    RCC_OscInitStruct.PLL.PLLP       = RCC_PLLP_DIV2;
+    RCC_OscInitStruct.PLL.PLLQ       = 2;
+    RCC_OscInitStruct.PLL.PLLR       = 2;
+    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+        Error_Handler();
+    }
 
-  /** Activate the Over-Drive mode
+    /** Activate the Over-Drive mode
   */
-  if (HAL_PWREx_EnableOverDrive() != HAL_OK)
-  {
-    Error_Handler();
-  }
+    if (HAL_PWREx_EnableOverDrive() != HAL_OK) {
+        Error_Handler();
+    }
 
-  /** Initializes the CPU, AHB and APB buses clocks
+    /** Initializes the CPU, AHB and APB buses clocks
   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+    RCC_ClkInitStruct.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK;
+    RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
-  {
-    Error_Handler();
-  }
+    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK) {
+        Error_Handler();
+    }
 }
 
 /* USER CODE BEGIN 4 */
-
 
 /* USER CODE END 4 */
 
@@ -292,10 +251,9 @@ void SystemClock_Config(void)
   * @brief  This function is executed in case of error occurrence.
   * @retval None
   */
-void Error_Handler(void)
-{
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
+void Error_Handler(void) {
+    /* USER CODE BEGIN Error_Handler_Debug */
+    /* User can add his own implementation to report the HAL error return state */
 
     AIR_CAN_Cmd_Off();
     __disable_irq();
@@ -307,27 +265,25 @@ void Error_Handler(void)
     WarnLedOn();
     TSAC_fan_off();
 
-  //display error
+    //display error
     error_display();
     buzzer_12khz();
 
-    #ifndef silence
+#ifndef silence
     buzzer_on();
-    #endif
+#endif
 
     __enable_irq();
     HAL_Delay(2000);
-      buzzer_off();
+    buzzer_off();
     __disable_irq();
-  
 
-  while (1)
-  {
-  }
-  /* USER CODE END Error_Handler_Debug */
+    while (1) {
+    }
+    /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.
@@ -335,11 +291,10 @@ void Error_Handler(void)
   * @param  line: assert_param error line source number
   * @retval None
   */
-void assert_failed(uint8_t *file, uint32_t line)
-{
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
+void assert_failed(uint8_t *file, uint32_t line) {
+    /* USER CODE BEGIN 6 */
+    /* User can add his own implementation to report the file name and line number,
+    /* eg: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+    /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

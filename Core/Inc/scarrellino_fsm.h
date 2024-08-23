@@ -14,19 +14,18 @@
 
 #include "fsm.h"
 
-FSM_callback_function run_callback_1();
-FSM_callback_function transition_callback_1();
+void run_callback_1(uint32_t state);
+void transition_callback_1(uint32_t state);
+
 
 enum FSM_SCARRELLINO_FSM_StateEnum {
-    FSM_SCARRELLINO_FSM_IDLE = 0,
-    FSM_SCARRELLINO_FSM_CHARGE = 1,
-    FSM_SCARRELLINO_FSM_STOP_CHARGE = 2,
-    FSM_SCARRELLINO_FSM_DONE = 3,
+    FSM_SCARRELLINO_FSM_IDLE,
+    FSM_SCARRELLINO_FSM_TSON,
+    FSM_SCARRELLINO_FSM_CHARGE,
+    FSM_SCARRELLINO_FSM_STOP_CHARGE,
+    _FSM_SCARRELLINO_FSM_STATE_COUNT,
+    _FSM_SCARRELLINO_FSM_DIE /** @brief Invalid state, leads to irrecoverable error i.e. hard fault */
 
-    _FSM_SCARRELLINO_FSM_STATE_COUNT = 4,
-
-    /** @brief Invalid state, leads to irrecoverable error i.e. hard fault */
-    _FSM_SCARRELLINO_FSM_DIE = 5
 };
 
 typedef enum FSM_SCARRELLINO_FSM_StateEnum FSM_SCARRELLINO_FSM_StateTypeDef;
@@ -81,6 +80,33 @@ void FSM_SCARRELLINO_FSM_IDLE_exit();
  * @param event event
  * @return next state
  */
+FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_TSON_event_handle(uint8_t event);
+
+/**
+ * @brief
+ * @param handle FSM handle
+ */
+void FSM_SCARRELLINO_FSM_TSON_entry();
+
+/**
+ * @brief
+ * @param handle FSM handle
+ * @return next state
+ */
+FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_TSON_do_work();
+
+/**
+ * @brief
+ * @param handle FSM handle
+ */
+void FSM_SCARRELLINO_FSM_TSON_exit();
+
+/**
+ * @brief
+ * @param handle FSM handle
+ * @param event event
+ * @return next state
+ */
 FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_CHARGE_event_handle(uint8_t event);
 
 /**
@@ -128,33 +154,5 @@ FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_STOP_CHARGE_do_work();
  * @param handle FSM handle
  */
 void FSM_SCARRELLINO_FSM_STOP_CHARGE_exit();
-
-/**
- * @brief
- * @param handle FSM handle
- * @param event event
- * @return next state
- */
-FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_DONE_event_handle(uint8_t event);
-
-/**
- * @brief
- * @param handle FSM handle
- */
-void FSM_SCARRELLINO_FSM_DONE_entry();
-
-/**
- * @brief
- * @param handle FSM handle
- * @return next state
- */
-FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_DONE_do_work();
-
-/**
- * @brief
- * @param handle FSM handle
- */
-void FSM_SCARRELLINO_FSM_DONE_exit();
-
 
 #endif // FSM_SCARRELLINO_FSM_H
