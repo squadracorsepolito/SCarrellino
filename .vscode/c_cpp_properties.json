@@ -7,7 +7,8 @@
         "Drivers/CMSIS/Device/ST/STM32F4xx/Include",
         "Drivers/CMSIS/Include",
         "Drivers/STM32F4xx_HAL_Driver/Inc",
-        "Drivers/STM32F4xx_HAL_Driver/Inc/Legacy"
+        "Drivers/STM32F4xx_HAL_Driver/Inc/Legacy",
+        "Lib/SCan/SC24/artifacts/MCB/c_source/"
       ],
       "defines": [
         "STM32F446xx",

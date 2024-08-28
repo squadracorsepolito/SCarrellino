@@ -1,5 +1,6 @@
 #include "stdio.h"
 #include "can.h" 
+#include "stdbool.h"
 
 
 void CAN_ECU_Tx(CAN_HandleTypeDef *hcan, uint8_t Txdata,uint8_t id,uint32_t TxMailbox );
@@ -28,20 +29,22 @@ void HV_BMS1_CAN_data_storage();
 void HV_BMS2_CAN_data_storage();
 void HV_BMS3_CAN_data_storage();
 void HV_BMS4_CAN_data_storage();
+void HV_BMS5_CAN_data_storage();
 void stop_charge_routine();
 void BRUSA_CAN_data_storage();
 uint8_t charge_control();
 void can_WD_set();
-uint8_t ChargeEN_RisingEdge();
-uint8_t ChargeEN_FallingEdge();
+bool ChargeEN_risingedge();
+bool ChargeEN_fallingedge();
 
 
-#define buffer_TLB_signals 4
-#define buffer_TLB_SDC 1
-#define buffer_BMS_HV_1 0
-#define buffer_BMS_HV_2 2
-#define buffer_BMS_HV_3 3
-#define buffer_BMS_HV_4 5
+#define buffer_TLB_signals 4u
+#define buffer_TLB_SDC 1u
+#define buffer_BMS_HV_1 0u
+#define buffer_BMS_HV_2 2u
+#define buffer_BMS_HV_3 3u
+#define buffer_BMS_HV_4 5u
+#define buffer_BMS_HV_5 6u
 #define CHG_EN_REQ 0U
 
 

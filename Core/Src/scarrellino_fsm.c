@@ -45,7 +45,7 @@ double sdc_tsac_initial_in_is_active = 0, sdc_post_ams_imd_relay_is_active = 0, 
 double v_max_id_rx, v_min_id_rx, v_max_rx, v_min_rx, v_mean_rx;
 
 //buzzer flags
-bool volatile buzzer_start_charge_on, buzzer_stop_charge_on;
+bool volatile buzzer_charge_on, buzzer_stop_charge_on;
 
 //tlb other signals
 double air_neg_cmd_is_active, air_neg_is_closed, air_neg_stg_mech_state_signal_is_active, air_pos_cmd_is_active,
@@ -119,47 +119,81 @@ STMLIBS_StatusTypeDef FSM_SCARRELLINO_FSM_init(FSM_HandleTypeDef *handle,
     return FSM_init(handle, &config, event_count, run_callback, transition_callback);
 }
 
-uint8_t HVRelays_isAirsClosed() {
-    if ((air_neg_cmd_is_active == 1) && (air_neg_is_closed == 1) && (air_neg_stg_mech_state_signal_is_active == 0) &&
-        (dcbus_prech_rly_cmd_is_active == 0) && (dcbus_prech_rly_is_closed == 0) && (air_pos_cmd_is_active == 1) &&
-        (air_pos_is_closed == 1) && (air_pos_stg_mech_state_signal_is_active == 0)) {
+bool HVRelays_isairsclosed(int_state_variable_Typedef *variables) {
+    if ((variables->air_neg_cmd_is_active == 1) && (variables->air_neg_is_closed == 1) && (variables->air_neg_stg_mech_state_signal_is_active == 0) &&
+        (variables->dcbus_prech_rly_cmd_is_active == 0) && (variables->dcbus_prech_rly_is_closed == 0) && (variables->air_pos_cmd_is_active == 1) &&
+        (variables->air_pos_is_closed == 1) && (variables->air_pos_stg_mech_state_signal_is_active == 0)) {
         return 1;
     }
     return 0;
 }
 
-uint8_t HVRelays_isAnyAirOpen() {
-    if ((air_neg_cmd_is_active == 0) || (air_neg_is_closed == 0) || (air_neg_stg_mech_state_signal_is_active == 1) ||
-        (air_pos_cmd_is_active == 0) || (air_pos_is_closed == 0) || (air_pos_stg_mech_state_signal_is_active == 1)) {
+bool HVRelays_IsAnyAirOpen(int_state_variable_Typedef *variables) {
+    if ((variables->air_neg_cmd_is_active == 0) || (variables->air_neg_is_closed == 0) || (variables->air_neg_stg_mech_state_signal_is_active == 1) ||
+        (variables->air_pos_cmd_is_active == 0) || (variables->air_pos_is_closed == 0) || (variables->air_pos_stg_mech_state_signal_is_active == 1)) {
         return 1;
     }
     return 0;
 }
 
-uint8_t HVRelays_isAnyClosed() {
-    if ((air_neg_cmd_is_active == 1) || (air_neg_is_closed == 1) || (air_neg_stg_mech_state_signal_is_active == 1) ||
-        (dcbus_prech_rly_cmd_is_active == 1) || (dcbus_prech_rly_is_closed == 1) || (air_pos_cmd_is_active == 1) ||
-        (air_pos_is_closed == 1) || (air_pos_stg_mech_state_signal_is_active == 1)) {
+bool HVRelays_IsAnyClosed(int_state_variable_Typedef *variables) {
+    if ((variables->air_neg_cmd_is_active == 1) || (variables->air_neg_is_closed == 1) || (variables->air_neg_stg_mech_state_signal_is_active == 1) ||
+        (variables->dcbus_prech_rly_cmd_is_active == 1) || (variables->dcbus_prech_rly_is_closed == 1) || (variables->air_pos_cmd_is_active == 1) ||
+        (variables->air_pos_is_closed == 1) || (variables->air_pos_stg_mech_state_signal_is_active == 1)) {
         return 1;
     }
     return 0;
 }
 
-uint8_t HVRelays_isAllOpen() {
-    if ((air_neg_cmd_is_active == 0) && (air_neg_is_closed == 0) && (air_neg_stg_mech_state_signal_is_active == 0) &&
-        (dcbus_prech_rly_cmd_is_active == 0) && (dcbus_prech_rly_is_closed == 0) && (air_pos_cmd_is_active == 0) &&
-        (air_pos_is_closed == 0) && (air_pos_stg_mech_state_signal_is_active == 0)) {
+bool HVRelays_IsAllOpen(int_state_variable_Typedef* variables) {
+    if ((variables->air_neg_cmd_is_active == 0) && (variables->air_neg_is_closed == 0) && (variables->air_neg_stg_mech_state_signal_is_active == 0) &&
+        (variables->dcbus_prech_rly_cmd_is_active == 0) && (variables->dcbus_prech_rly_is_closed == 0) && (variables->air_pos_cmd_is_active == 0) &&
+        (variables->air_pos_is_closed == 0) && (variables->air_pos_stg_mech_state_signal_is_active == 0)) {
         return 1;
     }
     return 0;
 }
-uint8_t SDC_isActive() {
-    if ((sdc_tsac_initial_in_is_active == 1) && (sdc_tsac_final_in_is_active == 1) &&
-        (sdc_post_ams_imd_relay_is_active == 1) && (tsal_green_is_active == 1) && (imp_any_is_active == 0) &&
-        (sdc_final_in_voltage >= 20.0) && (SDC_FUNGO() == SDC_active)) {
+bool SDC_isactive(int_state_variable_Typedef* variables) {
+    if ((variables->sdc_tsac_initial_in_is_active == 1) && (variables->sdc_tsac_final_in_is_active == 1) &&
+        (variables->sdc_post_ams_imd_relay_is_active == 1) && 
+        #ifdef IMP_EN
+        (variables->imp_any_is_active == 0) &&
+        #endif
+        (variables->sdc_final_in_voltage >= 20.0)  &&
+        (SDC_FUNGO() == SDC_active)) {
         return 1;
     }
     return 0;
+}
+
+
+
+
+void VariableSaving(int_state_variable_Typedef* variables){
+    
+    variables->air_neg_cmd_is_active = air_neg_cmd_is_active;
+    variables->air_neg_is_closed = air_neg_is_closed;
+    variables->air_neg_stg_mech_state_signal_is_active = air_neg_stg_mech_state_signal_is_active;
+    variables->air_pos_cmd_is_active = air_pos_cmd_is_active;
+    variables->air_pos_is_closed = air_pos_is_closed;
+    variables->air_pos_stg_mech_state_signal_is_active = air_pos_stg_mech_state_signal_is_active;
+    variables->ams_err_is_active = ams_err_is_active;
+    variables->dcbus_is_over60_v = dcbus_is_over60_v;
+    variables->dcbus_prech_rly_cmd_is_active = dcbus_prech_rly_cmd_is_active;
+    variables->dcbus_prech_rly_is_closed = dcbus_prech_rly_is_closed;
+    variables->imd_err_is_active = imd_err_is_active;
+    variables->imp_any_is_active = imp_any_is_active;
+    variables->imp_dcbus_is_active = imp_dcbus_is_active;
+    variables->imp_hv_relays_signals_is_active = imp_hv_relays_signals_is_active;
+    variables->sdc_final_in_voltage = sdc_final_in_voltage;
+    variables->sdc_post_ams_imd_relay_is_active = sdc_post_ams_imd_relay_is_active;
+    variables->sdc_prech_bypass_rly_is_closed = sdc_prech_bypass_rly_is_closed;
+    variables->sdc_tsac_final_in_is_active = sdc_tsac_final_in_is_active;
+    variables->sdc_tsac_initial_in_is_active = sdc_tsac_initial_in_is_active;
+    variables->tsal_green_is_active = tsal_green_is_active;
+    variables->charge_temp = charge_temp;
+    variables->charging_curr = charging_curr;
+
 }
 
 // State control functions
@@ -176,19 +210,22 @@ uint32_t _FSM_SCARRELLINO_FSM_IDLE_event_handle(uint8_t event) {
             return _FSM_SCARRELLINO_FSM_DIE;
     }
 }
+    static  int_state_variable_Typedef variables;    
 
 FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_IDLE_do_work(){
-    // ################################################## OUTPUTS for this state
 
+    // #############################################     Saves all the variables in a struct to stay consistent during the state
+
+    VariableSaving(&variables);
+
+    // ################################################## OUTPUTS for this state
     // by default in TSON keep the airs OPEN
     AIR_CAN_Cmd = 0;
 
-    // don't buzz
-    buzzer_start_charge_on = 0;
-    buzzer_stop_charge_on  = 0;
 
     // don't enable charge led by default
     ChargeBlueLedOff();
+
     // dont' charge by default
     ChargeENcmdOFF();
 
@@ -196,20 +233,30 @@ FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_IDLE_do_work(){
     // Set default state if nothing changes
     uint32_t next = FSM_SCARRELLINO_FSM_IDLE;
 
-    if (SDC_isActive() && (ams_err_is_active == 0) && (imd_err_is_active == 0) && (tsal_green_is_active == 1) &&
-        HVRelays_isAllOpen() && (dcbus_is_over60_v == 0) &&
+
+    if (SDC_isactive(&variables) && (variables.ams_err_is_active == 0) && (variables.imd_err_is_active == 0) && (variables.tsal_green_is_active == 1) && 
+        HVRelays_IsAllOpen(&variables) && (variables.dcbus_is_over60_v == 0) &&
 #ifdef IMP_EN
-        (imp_dcbus_is_active == 0) && (imp_hv_relays_signals_is_active == 0) && (imp_any_is_active == 0) &&
+        (variables.imp_dcbus_is_active == 0) && (variables.imp_hv_relays_signals_is_active == 0) && (variables.imp_any_is_active == 0) &&
 #endif
 #ifdef TEMP_CHECK_EN
-        (charge_temp < 60) &&
+        (variables.charge_temp < 60) &&
 #endif
-        ChargeEN_RisingEdge()) {
+        ChargeEN_risingedge())
+ {
 
         next = FSM_SCARRELLINO_FSM_TSON;
     }
-    return next;
-}
+
+// check for implausibile transition
+    switch (next) {
+        case FSM_SCARRELLINO_FSM_IDLE:
+        case FSM_SCARRELLINO_FSM_TSON:
+            return next;
+        default:
+            return _FSM_SCARRELLINO_FSM_DIE;
+    }
+    }
 
 /** @brief wrapper of FSM_SCARRELLINO_FSM_do_work, with exit state checking */
 uint32_t _FSM_SCARRELLINO_FSM_IDLE_do_work() {
@@ -238,19 +285,26 @@ uint32_t _FSM_SCARRELLINO_FSM_TSON_event_handle(uint8_t event) {
     }
 }
 
+
 void FSM_SCARRELLINO_FSM_TSON_entry() {
     fsm_tson_entry_time = HAL_GetTick();
 }
 
+
 FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_TSON_do_work() {
+    // #############################################     Saves all the variables in a struct to stay consistent during the state
+
+    VariableSaving(&variables);
+
     // ################################################## OUTPUTS for this state
-
     // by default in TSON keep the airs closed
+    #ifdef air
     AIR_CAN_Cmd = 1;
+    #else
+    AIR_CAN_Cmd = 0;
 
-    // don't buzz
-    buzzer_start_charge_on = 0;
-    buzzer_stop_charge_on  = 0;
+    #endif
+
 
     // don't enable charge led by default
     ChargeBlueLedOff();
@@ -261,17 +315,17 @@ FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_TSON_do_work() {
     // Set default state if nothing changes
     uint32_t next = FSM_SCARRELLINO_FSM_TSON;
 
-    if (SDC_isActive() &&                                        // SDC active
-        (ams_err_is_active == 0) && (imd_err_is_active == 0) &&  // NO AMS/IMD errors
-        (tsal_green_is_active == 0) &&                           // TSAL not green (some HV RELAY is closed)
-        HVRelays_isAirsClosed() &&   // only AIR POS/NEG are closed (DCBUS PRECHARGE completed)
-        (dcbus_is_over60_v == 1) &&  // We see correctly the DCBUS over 60V
+    if (SDC_isactive(&variables) &&                                        // SDC active
+        (variables.ams_err_is_active == 0) && (variables.imd_err_is_active == 0) &&  // NO AMS/IMD errors
+        //(variables.tsal_green_is_active == 0) &&                           // TSAL not green (some HV RELAY is closed)
+        HVRelays_isairsclosed(&variables) &&   // only AIR POS/NEG are closed (DCBUS PRECHARGE completed)
+        (variables.dcbus_is_over60_v == 1) &&  // We see correctly the DCBUS over 60V
 #ifdef IMP_EN
         // No implausibilities active
-        (imp_dcbus_is_active == 0) && (imp_hv_relays_signals_is_active == 0) && (imp_any_is_active == 0) &&
+        (variables.imp_dcbus_is_active == 0) && (variables.imp_hv_relays_signals_is_active == 0) && (variables.imp_any_is_active == 0) &&
 #endif
 #ifdef TEMP_CHECK_EN
-        (charge_temp < 60) &&
+        (variables.charge_temp < 60) &&
 #endif
         // if We are still requesting to charge
         (ChargeEN() == CHG_EN_REQ)) {
@@ -279,20 +333,28 @@ FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_TSON_do_work() {
         next = FSM_SCARRELLINO_FSM_CHARGE;
     }
     // If we found AMS/IMD errors or the SDC opens or some implausibility
-    else if ((ams_err_is_active == 1) || (imd_err_is_active == 1) || !SDC_isActive() ||
+    else if ((variables.ams_err_is_active == 1) || (variables.imd_err_is_active == 1) || !SDC_isactive(&variables) ||
 #ifdef IMP_EN
-             (imp_dcbus_is_active == 1) || (imp_hv_relays_signals_is_active == 1) || (imp_any_is_active == 1) ||
+             (variables.imp_dcbus_is_active == 1) || (variables.imp_hv_relays_signals_is_active == 1) || (variables.imp_any_is_active == 1) ||
 #endif
              (ChargeEN() != CHG_EN_REQ)) {
         next = FSM_SCARRELLINO_FSM_IDLE;
     }
-    // If we are timing out the TS ON procedure (2sec)
-    else if (HAL_GetTick() >= (fsm_tson_entry_time + 2000U)) {
+    // If we are timing out the TS ON procedure (5sec)
+    else if (HAL_GetTick() >= (fsm_tson_entry_time + 5000U)) {
         next = FSM_SCARRELLINO_FSM_IDLE;
-        // go back to idle
+      // go back to idle
+        }
+
+    switch (next) {
+            case FSM_SCARRELLINO_FSM_TSON:
+            case FSM_SCARRELLINO_FSM_IDLE:
+            case FSM_SCARRELLINO_FSM_CHARGE:
+                return next;
+            default:
+                return _FSM_SCARRELLINO_FSM_DIE;
     }
-    return next;
-}
+    }
 
 /** @brief wrapper of FSM_SCARRELLINO_FSM_do_work, with exit state checking */
 uint32_t _FSM_SCARRELLINO_FSM_TSON_do_work() {
@@ -323,17 +385,26 @@ uint32_t _FSM_SCARRELLINO_FSM_CHARGE_event_handle(uint8_t event) {
 
 void FSM_SCARRELLINO_FSM_CHARGE_entry() {
     fsm_charge_entry_time = HAL_GetTick();
+    buzzer_charge_on = 1;
+
 }
+
+
 /** @brief wrapper of FSM_SCARRELLINO_FSM_do_work, with exit state checking */
 FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_CHARGE_do_work() {
+    // #############################################     Saves all the variables in a struct to stay consistent during the state
+
+    VariableSaving(&variables);
+
     // ################################################## OUTPUTS for this state
 
     // by default in TSON keep the airs closed
+    #ifdef air
     AIR_CAN_Cmd = 1;
-
-    // don't buzz by default then the logic will decide below
-    buzzer_start_charge_on = 0;
-    buzzer_stop_charge_on  = 0;
+    #else
+    AIR_CAN_Cmd = 0;
+    #endif    
+    
 
     // SIgnal we are in charge state by toggling led
     ChargeBlueLedOn();
@@ -343,8 +414,8 @@ FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_CHARGE_do_work() {
         // Enable brusa charging
         ChargeENcmdON();
         // Signal start charge with sound
-        buzzer_start_charge_on = 1;
-    } else {
+    } 
+    else {
         // dont' charge by default
         ChargeENcmdOFF();
     }
@@ -353,19 +424,25 @@ FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_CHARGE_do_work() {
     // Set default state if nothing changes
     uint32_t next = FSM_SCARRELLINO_FSM_CHARGE;
 
-    if ((ams_err_is_active == 1) || (imd_err_is_active == 1) ||  // If we found AMS/IMD errors
-        !SDC_isActive() ||                                       // or the SDC opens
+    if ((variables.ams_err_is_active == 1) || (variables.imd_err_is_active == 1) ||  // If we found AMS/IMD errors
+        !SDC_isactive(&variables) ||                                       // or the SDC opens
 #ifdef IMP_EN
-        (imp_dcbus_is_active == 1) || (imp_hv_relays_signals_is_active == 1) ||
-        (imp_any_is_active == 0) ||  // or implausibility
+        (variables.imp_dcbus_is_active == 1) || (variables.imp_hv_relays_signals_is_active == 1) ||
+        (variables.imp_any_is_active == 0) ||  // or implausibility
 #endif
-        HVRelays_isAnyAirOpen() ||                             // The AIRs somehow opened
-        ChargeEN_FallingEdge() || (ChargeEN() == !CHG_EN_REQ)  // or the charge is disabled via switch
+        HVRelays_IsAnyAirOpen(&variables) ||                             // The AIRs somehow opened
+        ChargeEN_fallingedge() || (ChargeEN() == !CHG_EN_REQ)  // or the charge is disabled via switch
     ) {
         next = FSM_SCARRELLINO_FSM_STOP_CHARGE;
     }
 
-    return next;
+    switch (next) {
+        case FSM_SCARRELLINO_FSM_CHARGE:
+        case FSM_SCARRELLINO_FSM_STOP_CHARGE:
+            return next;
+        default:
+            return _FSM_SCARRELLINO_FSM_DIE;
+    }
 }
 
 /** @brief wrapper of FSM_SCARRELLINO_FSM_do_work, with exit state checking */
@@ -399,14 +476,20 @@ void FSM_SCARRELLINO_FSM_STOP_CHARGE_entry() {
 }
 
 FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_STOP_CHARGE_do_work() {
+    // #############################################     Saves all the variables in a struct to stay consistent during the state
+
+    VariableSaving(&variables);
+
     // ################################################## OUTPUTS for this state
 
     // keep airs closed
+    #ifdef air
     AIR_CAN_Cmd = 1;
+    #else
+    AIR_CAN_Cmd = 0;
+    #endif
 
-    // don't buzz
-    buzzer_start_charge_on = 0;
-    buzzer_stop_charge_on  = 0;
+    buzzer_stop_charge_on  = 1;
 
     // disable led
     ChargeBlueLedOff();
@@ -419,10 +502,17 @@ FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_STOP_CHARGE_do_work() {
     uint32_t next = FSM_SCARRELLINO_FSM_STOP_CHARGE;
 
     // when no more current flows or we timeout
-    if (charging_curr < 0.5 || HAL_GetTick() > fsm_stop_charge_entry_time + 500U) {
+    if (variables.charging_curr < 0.5 || HAL_GetTick() > fsm_stop_charge_entry_time + 500U) {
         next = FSM_SCARRELLINO_FSM_IDLE;
     }
-    return next;
+
+    switch (next) {
+        case FSM_SCARRELLINO_FSM_IDLE:
+        case FSM_SCARRELLINO_FSM_STOP_CHARGE:
+            return next;
+        default:
+            return _FSM_SCARRELLINO_FSM_DIE;
+    }
 }
 
 /** @brief wrapper of FSM_SCARRELLINO_FSM_do_work, with exit state checking */

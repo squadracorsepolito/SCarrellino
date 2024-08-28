@@ -114,6 +114,9 @@ void Error_Handler(void);
 //#define silence
 //#define BRUSA_on
 #define Watchdog
+//#define IMP_EN
+#define TEMP_CHECK_EN
+#define air
 
 #define MCB_CAN_HANDLE hcan2
 #define HVCB_CAN_HANDLE hcan1

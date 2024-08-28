@@ -26,7 +26,7 @@ extern FSM_HandleTypeDef hfsm;
 
 //Struct for the CAN Software Watchdog
 SW_Watchdog_Typedef HVCB_HVB_RX_V_CELL_FRAME, HVCB_HVB_RX_T_CELL_FRAME, HVCB_HVB_RX_SOC_FRAME,
-    MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME, HVCB_HVB_RX_MEASURE_FRAME, MCB_TLB_BAT_SIGNALS_STATUS_FRAME;
+    MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME, HVCB_HVB_RX_MEASURE_FRAME, HVCB_HVB_RX_DIAGNOSIS_FRAME, MCB_TLB_BAT_SIGNALS_STATUS_FRAME;
 
 //value of the timer
 extern volatile uint16_t counter;
@@ -41,6 +41,20 @@ uint8_t old_position;
 extern uint8_t number_of_positions;
 
 uint8_t volatile extern error_code;
+
+
+uint8_t volatile     hvb_diag_bat_vlt_sna  ,
+                     hvb_diag_inv_vlt_sna  ,
+                     hvb_diag_bat_curr_sna ,
+                     hvb_diag_vcu_can_sna  ,
+                     hvb_diag_cell_sna     ,
+                     hvb_diag_bat_uv       ,
+                     hvb_diag_cell_ov      ,
+                     hvb_diag_cell_uv      ,
+                     hvb_diag_cell_ot      ,
+                     hvb_diag_cell_ut      ,
+                     hvb_diag_inv_vlt_ov   ,
+                     hvb_diag_bat_curr_oc  ;
 
 /** @brief display pages manager function */
 void display_routine() {
@@ -66,22 +80,31 @@ void display_routine() {
         }
     }
 }
-uint8_t ChargeEN_RisingEdge() {
-    static uint8_t last_state    = 0;
-    static uint8_t current_state = 0;
 
-    last_state    = current_state;
+
+
+bool ChargeEN_risingedge() {
+
+    bool static last_state    = 0;
+    bool static current_state = 0;
+    
+    last_state    = 1;
     current_state = ChargeEN();
+
     return (last_state == !CHG_EN_REQ) && (current_state == CHG_EN_REQ);
+
+    
 }
 
-uint8_t ChargeEN_FallingEdge() {
+bool ChargeEN_fallingedge() {
     static uint8_t last_state    = 0;
     static uint8_t current_state = 0;
 
-    last_state    = current_state;
+    last_state    = 1;
     current_state = ChargeEN();
+
     return (last_state == CHG_EN_REQ) && (current_state == !CHG_EN_REQ);
+
 }
 
 /** @brief display page: temperature, state of charge */
@@ -102,11 +125,15 @@ void display_routine_0() {
             break;
 
         case 1:
+            strcpy(state, "TSON");
+            break;
+
+        case 2:
             strcpy(state, "CHARGE");
             break;
-        case 2:
-            strcpy(state, "STOP CHARGE");
         case 3:
+            strcpy(state, "STOP CHARGE");
+        case 4:
             strcpy(state, "DONE");
     }
 
@@ -120,7 +147,7 @@ void display_routine_0() {
     I2C_LCD_WriteString(I2C_LCD, (char *)&buff);
 
     //charging temperature if it is in CHARGE state
-    if (hfsm.current_state == 1) {
+    if (hfsm.current_state == 2) {
         I2C_LCD_ACapo(I2C_LCD);
         sprintf(buff, "Charge Temp : %.0f C ", charge_temp);
         I2C_LCD_WriteString(I2C_LCD, (char *)&buff);
@@ -347,73 +374,74 @@ uint32_t MilElapsed(uint8_t reset) {
 
 extern uint8_t buzzer_stop_charge_on;
 
+
 /**
 * @brief Controls the buzzer routines
 */
-void buzzer_routine() {
-    extern uint8_t buzzer_start_charge_on;
-    extern uint8_t buzzer_stop_charge_on;
+void buzzer_routine(){
 
-    uint8_t static flag_play_start_charge_melody = 0;
-    uint8_t static flag_play_stop_charge_melody  = 0;
+    extern bool buzzer_charge_on;
+    
+    
+    uint8_t static flag = 0;
+    
+    if(buzzer_charge_on == 1){
 
-    if (buzzer_start_charge_on == 1 && flag_play_start_charge_melody == 0) {
-        flag_play_start_charge_melody = 1;
+        if(flag == 0){
+
+            MilElapsed(1);
+            buzzer_800hz();
+
+            #ifndef silence
+            buzzer_on();
+            #endif
+
+            flag = 1;
+        }
+
+        if ((MilElapsed(0) >= 300) & (flag == 1)){
+            buzzer_1khz();
+            flag = 2;
+            }
+
+        if((MilElapsed(0) >= 600) & (flag == 2)){
+            buzzer_12khz();
+            flag = 3;
+        }
+
+        if((MilElapsed(0) >= 900) & (flag == 3)){
+            buzzer_off();
+            buzzer_charge_on = 0;
+            flag = 0;
+        }    
+        
     }
 
-    if (buzzer_stop_charge_on == 1 && flag_play_stop_charge_melody == 0) {
-        flag_play_stop_charge_melody = 1;
-    }
+    if(buzzer_stop_charge_on == 1){
 
-    // CHARGE ON MELODY
-    if (flag_play_start_charge_melody == 1) {
-        MilElapsed(1);
-        buzzer_800hz();
+        if(flag == 0){
+            MilElapsed(1);
+            buzzer_12khz();
 
-#ifndef silence
-        buzzer_on();
-#endif
-
-        flag_play_start_charge_melody = 2;
-    }
-
-    if ((MilElapsed(0) >= 300) & (flag_play_start_charge_melody == 2)) {
-        buzzer_1khz();
-        flag_play_start_charge_melody = 2;
-    }
-
-    if ((MilElapsed(0) >= 600) & (flag_play_start_charge_melody == 3)) {
-        buzzer_12khz();
-        flag_play_start_charge_melody = 3;
-    }
-
-    if ((MilElapsed(0) >= 900) & (flag_play_start_charge_melody == 4)) {
-        buzzer_off();
-        flag_play_start_charge_melody = 0;
-    }
-
-    // CHARGE OFF MELODY
-    if (flag_play_stop_charge_melody == 1) {
-        MilElapsed(1);
-        buzzer_12khz();
-
-#ifndef silence
-        buzzer_on();
-#endif
-
-        flag_play_stop_charge_melody = 2;
-    }
-    if ((MilElapsed(0) >= 300) & (flag_play_stop_charge_melody == 2)) {
-        buzzer_1khz();
-        flag_play_stop_charge_melody = 2;
-    }
-    if ((MilElapsed(0) >= 600) & (flag_play_stop_charge_melody == 3)) {
-        buzzer_800hz();
-        flag_play_stop_charge_melody = 3;
-    }
-    if ((MilElapsed(0) >= 900) & (flag_play_stop_charge_melody == 4)) {
-        buzzer_off();
-        flag_play_stop_charge_melody = 0;
+            #ifndef silence
+            buzzer_on();
+            #endif
+            
+            flag = 1;
+        }
+        if ((MilElapsed(0) >= 300) & (flag == 1)){
+            buzzer_1khz();
+            flag = 2;
+            }
+        if((MilElapsed(0) >= 600) & (flag == 2)){
+            buzzer_800hz();
+            flag = 3;
+        }
+        if((MilElapsed(0) >= 900) & (flag == 3)){
+            buzzer_off();
+            buzzer_stop_charge_on = 0;
+            flag = 0;
+        }    
     }
 }
 
@@ -446,10 +474,57 @@ void buzzer_routine() {
 //     }
 //     }
 
+
+
+
+uint8_t AMS_detection(
+    uint8_t ams_err_is_active,
+    uint8_t hvb_diag_bat_vlt_sna,
+    uint8_t hvb_diag_inv_vlt_sna,
+    uint8_t hvb_diag_bat_curr_sna,
+    uint8_t hvb_diag_vcu_can_sna,
+    uint8_t hvb_diag_cell_sna,
+    uint8_t hvb_diag_bat_uv,
+    uint8_t hvb_diag_cell_ov,
+    uint8_t hvb_diag_cell_uv,
+    uint8_t hvb_diag_cell_ot,
+    uint8_t hvb_diag_cell_ut,
+    uint8_t hvb_diag_inv_vlt_ov,
+    uint8_t hvb_diag_bat_curr_oc
+   ){
+    static uint8_t ams_err_prev = 0;
+
+    if(ams_err_prev && ams_err_is_active){
+        return ams_err_prev;
+    }
+
+    if(!ams_err_is_active){ // ams_err_prev & 
+        ams_err_prev = 0;
+        return ams_err_prev;
+    }
+
+ams_err_prev =  (hvb_diag_bat_vlt_sna
+    || hvb_diag_inv_vlt_sna
+    || hvb_diag_bat_curr_sna
+    || hvb_diag_vcu_can_sna
+    || hvb_diag_cell_sna
+    || hvb_diag_bat_uv
+    || hvb_diag_cell_ov
+    || hvb_diag_cell_uv
+    || hvb_diag_cell_ot
+    || hvb_diag_cell_ut
+    || hvb_diag_inv_vlt_ov
+    || hvb_diag_bat_curr_oc ) & ams_err_is_active;
+
+    return  ams_err_prev;
+}
+
+
 /**
  * @brief     Controls the AMS and IMD status  led
  */
 void IMD_AMS_error_handler() {
+
     extern double imd_err_is_active, ams_err_is_active;
 
     if (imd_err_is_active == 1) {
@@ -462,7 +537,21 @@ void IMD_AMS_error_handler() {
         WarnLedOff();
     }
 
-    if (ams_err_is_active == 1) {
+
+
+    if (AMS_detection((uint8_t)ams_err_is_active,
+                               hvb_diag_bat_vlt_sna,
+                               hvb_diag_inv_vlt_sna,
+                               hvb_diag_bat_curr_sna,
+                               hvb_diag_vcu_can_sna,
+                               hvb_diag_cell_sna,
+                               hvb_diag_bat_uv,
+                               hvb_diag_cell_ov,
+                               hvb_diag_cell_uv,
+                               hvb_diag_cell_ot,
+                               hvb_diag_cell_ut,
+                               hvb_diag_inv_vlt_ov,
+                               hvb_diag_bat_curr_oc  ) == 1) {
         AMS_err_on();
         WarnLedOn();
     }
@@ -519,7 +608,6 @@ void can_tx_routine() {
         can_tx_7();
 
 #endif
-
         switch (AIR_CAN_Cmd) {
             case 0:
                 AIR_CAN_Cmd_Off();
@@ -666,6 +754,16 @@ void HVCB_FIFO1_RX_routine() {
                 }
                 can_buffer[buffer_BMS_HV_3].data_present = 1;
 
+            case HVCB_HVB_RX_DIAGNOSIS_FRAME_ID:
+
+                can_buffer[buffer_BMS_HV_5].id = HVCB_HVB_RX_DIAGNOSIS_FRAME_ID;
+                for (uint8_t i = 0; i < 8; i++) {
+                    can_buffer[buffer_BMS_HV_5].data[i] = RxData[i];
+                }
+                can_buffer[buffer_BMS_HV_5].data_present = 1;
+
+
+
                 break;
         }
     }
@@ -792,6 +890,7 @@ struct hvcb_hvb_rx_v_cell_t v_cell_rx;
 struct hvcb_hvb_rx_t_cell_t t_cell;
 struct hvcb_hvb_rx_soc_t SOC_struct_rx;
 struct hvcb_hvb_rx_measure_t curr_measure;
+struct hvcb_hvb_rx_diagnosis_t diagnosis;
 double extern SOC;
 
 void TLB_Battery_SDC_CAN_data_storage() {
@@ -981,6 +1080,35 @@ void HV_BMS4_CAN_data_storage() {
     }
 }
 
+void HV_BMS5_CAN_data_storage() {
+    if (can_buffer[buffer_BMS_HV_5].data_present == 1) {
+#ifdef Watchdog
+        SW_Watchdog_Refresh(&HVCB_HVB_RX_DIAGNOSIS_FRAME);
+#endif
+
+        can_buffer[buffer_BMS_HV_5].data_present = 0;
+
+        hvcb_hvb_rx_diagnosis_init(&diagnosis);
+        hvcb_hvb_rx_diagnosis_unpack(
+            &diagnosis, (uint8_t *)&can_buffer[buffer_BMS_HV_5].data, HVCB_HVB_RX_DIAGNOSIS_LENGTH);
+
+        hvb_diag_bat_vlt_sna                                = hvcb_hvb_rx_diagnosis_hvb_diag_bat_vlt_sna_decode(      diagnosis.hvb_diag_bat_vlt_sna  );
+        hvb_diag_inv_vlt_sna                                = hvcb_hvb_rx_diagnosis_hvb_diag_inv_vlt_sna_decode(      diagnosis.hvb_diag_inv_vlt_sna  );
+        hvb_diag_bat_curr_sna                               = hvcb_hvb_rx_diagnosis_hvb_diag_bat_curr_sna_decode(     diagnosis.hvb_diag_bat_curr_sna  );
+        hvb_diag_vcu_can_sna                                = hvcb_hvb_rx_diagnosis_hvb_diag_vcu_can_sna_decode(      diagnosis.hvb_diag_vcu_can_sna  );
+        hvb_diag_cell_sna                                   = hvcb_hvb_rx_diagnosis_hvb_diag_cell_sna_decode(         diagnosis.hvb_diag_cell_sna    );
+        hvb_diag_bat_uv                                     = hvcb_hvb_rx_diagnosis_hvb_diag_bat_uv_decode(           diagnosis.hvb_diag_bat_uv      );
+        hvb_diag_cell_ov                                    = hvcb_hvb_rx_diagnosis_hvb_diag_cell_ov_decode(          diagnosis.hvb_diag_cell_ov     );
+        hvb_diag_cell_uv                                    = hvcb_hvb_rx_diagnosis_hvb_diag_cell_uv_decode(          diagnosis.hvb_diag_cell_uv     );
+        hvb_diag_cell_ot                                    = hvcb_hvb_rx_diagnosis_hvb_diag_cell_ot_decode(          diagnosis.hvb_diag_cell_ot     );
+        hvb_diag_cell_ut                                    = hvcb_hvb_rx_diagnosis_hvb_diag_cell_ut_decode(          diagnosis.hvb_diag_cell_ut     );
+        hvb_diag_inv_vlt_ov                                 = hvcb_hvb_rx_diagnosis_hvb_diag_inv_vlt_ov_decode(       diagnosis.hvb_diag_inv_vlt_ov  );
+        hvb_diag_bat_curr_oc                                = hvcb_hvb_rx_diagnosis_hvb_diag_bat_curr_oc_decode(      diagnosis.hvb_diag_bat_curr_oc  );
+
+        
+          }
+}
+
 uint8_t charge_control() {
     if (ChargeENcmdState() == ON) {
         if (charging_curr < 0.5)
@@ -1006,4 +1134,5 @@ void can_WD_set() {
     can_WD_init(&HVCB_HVB_RX_MEASURE_FRAME, HVCB_HVB_RX_MEASURE_CYCLE_TIME_MS);
     can_WD_init(&MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME, MCB_TLB_BAT_SD_CSENSING_STATUS_CYCLE_TIME_MS);
     can_WD_init(&MCB_TLB_BAT_SIGNALS_STATUS_FRAME, MCB_TLB_BAT_SIGNALS_STATUS_CYCLE_TIME_MS);
+    can_WD_init(&HVCB_HVB_RX_DIAGNOSIS_FRAME,HVCB_HVB_RX_DIAGNOSIS_CYCLE_TIME_MS ); 
 }

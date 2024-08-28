@@ -51,10 +51,10 @@ Core/Src/hvcb.c \
 Core/Src/i2c.c \
 Core/Src/interrupt.c \
 Core/Src/main.c \
-Core/Src/mcb.c \
 Core/Src/nlg5_database_can.c \
 Core/Src/ntc.c \
 Core/Src/scarrellino_fsm.c \
+Core/Src/scarrellino_fsm_weak.c \
 Core/Src/stm32f4xx_hal_msp.c \
 Core/Src/stm32f4xx_it.c \
 Core/Src/syscalls.c \
@@ -83,7 +83,8 @@ Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c \
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c \
+Lib/SCan/SC24/artifacts/MCB/c_source/mcb.c
 
 
 CPP_SOURCES = \
@@ -159,7 +160,8 @@ C_INCLUDES =  \
 -IDrivers/CMSIS/Device/ST/STM32F4xx/Include \
 -IDrivers/CMSIS/Include \
 -IDrivers/STM32F4xx_HAL_Driver/Inc \
--IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy
+-IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy \
+-ILib/SCan/SC24/artifacts/MCB/c_source/
 
 
 

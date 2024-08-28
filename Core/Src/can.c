@@ -82,8 +82,8 @@ CAN_FilterTypeDef filtriRx1;
     filtriRx1.FilterScale          = CAN_FILTERSCALE_32BIT;
     filtriRx1.SlaveStartFilterBank = 11u;
 
-
 HAL_CAN_ConfigFilter(&HVCB_CAN_HANDLE, &filtriRx1);
+
 
 CAN_FilterTypeDef filtriRx2;
     filtriRx2.FilterActivation     = ENABLE;
@@ -99,6 +99,23 @@ CAN_FilterTypeDef filtriRx2;
 
 
 HAL_CAN_ConfigFilter(&HVCB_CAN_HANDLE, &filtriRx2);
+
+CAN_FilterTypeDef filtriRx3;
+    filtriRx2.FilterActivation     = ENABLE;
+    filtriRx2.FilterFIFOAssignment = CAN_FILTER_FIFO1;
+    filtriRx2.FilterBank           = 5u;
+    filtriRx2.FilterIdHigh         = (HVCB_HVB_RX_DIAGNOSIS_FRAME_ID << 5);
+    filtriRx2.FilterIdLow          = 0x0000;
+    filtriRx2.FilterMaskIdHigh     = (HVCB_HVB_RX_DIAGNOSIS_FRAME_ID << 5);
+    filtriRx2.FilterMaskIdLow      = 0x0000;
+    filtriRx2.FilterMode           = CAN_FILTERMODE_IDLIST;
+    filtriRx2.FilterScale          = CAN_FILTERSCALE_32BIT;
+    filtriRx2.SlaveStartFilterBank = 11u;
+
+
+HAL_CAN_ConfigFilter(&HVCB_CAN_HANDLE, &filtriRx3);
+
+
 
 
  // attivazione interrupt Rx

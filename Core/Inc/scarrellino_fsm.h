@@ -156,3 +156,21 @@ FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_STOP_CHARGE_do_work();
 void FSM_SCARRELLINO_FSM_STOP_CHARGE_exit();
 
 #endif // FSM_SCARRELLINO_FSM_H
+
+
+
+typedef struct int_state_variable{
+    double sdc_tsac_initial_in_is_active, 
+           sdc_post_ams_imd_relay_is_active,
+           sdc_tsac_final_in_is_active ,
+           sdc_prech_bypass_rly_is_closed , 
+           sdc_final_in_voltage ;
+    double air_neg_cmd_is_active, air_neg_is_closed, air_neg_stg_mech_state_signal_is_active, air_pos_cmd_is_active,
+           air_pos_is_closed, air_pos_stg_mech_state_signal_is_active,
+           ams_err_is_active , dcbus_is_over60_v, dcbus_prech_rly_cmd_is_active, dcbus_prech_rly_is_closed,
+           imd_err_is_active , imp_dcbus_is_active, imp_any_is_active , imp_hv_relays_signals_is_active,
+           tsal_green_is_active;
+
+    double charge_temp, charging_curr;
+
+} int_state_variable_Typedef;

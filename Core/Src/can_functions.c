@@ -129,6 +129,7 @@ void can_rx_routine(void) {
         HV_BMS2_CAN_data_storage();
         HV_BMS3_CAN_data_storage();
         HV_BMS4_CAN_data_storage();
+        HV_BMS5_CAN_data_storage();
         TLB_Battery_signals_CAN_data_storage();
         TLB_Battery_SDC_CAN_data_storage();
     }
@@ -372,7 +373,7 @@ void AIR_CAN_Cmd_Off() {
  */
 void can_WD_start() {
     extern SW_Watchdog_Typedef HVCB_HVB_RX_V_CELL_FRAME, HVCB_HVB_RX_T_CELL_FRAME, HVCB_HVB_RX_SOC_FRAME,
-        MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME, HVCB_HVB_RX_MEASURE_FRAME, MCB_TLB_BAT_SIGNALS_STATUS_FRAME;
+        MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME, HVCB_HVB_RX_MEASURE_FRAME,HVCB_HVB_RX_DIAGNOSIS_FRAME, MCB_TLB_BAT_SIGNALS_STATUS_FRAME;
 
     SW_Watchdog_start(&HVCB_HVB_RX_V_CELL_FRAME);
     SW_Watchdog_start(&HVCB_HVB_RX_T_CELL_FRAME);
@@ -384,4 +385,6 @@ void can_WD_start() {
 #endif
     SW_Watchdog_start(&MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME);
     SW_Watchdog_start(&MCB_TLB_BAT_SIGNALS_STATUS_FRAME);
+    SW_Watchdog_start(&HVCB_HVB_RX_DIAGNOSIS_FRAME);
+
 }
