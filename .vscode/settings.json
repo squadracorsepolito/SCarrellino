@@ -11,5 +11,6 @@
         "i2c_lcd_cfg.h": "c",
         "can.h": "c"
     },
-    "cortex-debug.variableUseNaturalFormat": true
+    "cortex-debug.variableUseNaturalFormat": true,
+    "cmake.sourceDirectory": "/home/davide/Scrivania/directory SC/SCarrellino/Drivers/CMSIS/DSP/Source/InterpolationFunctions"
 }

@@ -112,8 +112,6 @@ void can_WD_init(SW_Watchdog_Typedef *info_struct, uint32_t cycle_tyme){
     info_struct->cycle_time    = cycle_tyme;
     info_struct->watchdog_time = cycle_tyme * 5; 
 
-    if (info_struct->index == 6) info_struct->watchdog_time = cycle_tyme * 14;
-
 
     index += 1;
     SW_Watchdog_set(info_struct);

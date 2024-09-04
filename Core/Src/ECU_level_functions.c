@@ -56,7 +56,7 @@ uint8_t volatile     hvb_diag_bat_vlt_sna  ,
                      hvb_diag_inv_vlt_ov   ,
                      hvb_diag_bat_curr_oc  ;
 
-/** @brief display pages manager function */
+/** @brief Display pages manager function */
 void display_routine() {
     if (ADC_conv_flag == 1) {
         encoder_position_adjustment();
@@ -147,7 +147,7 @@ void display_routine_0() {
     I2C_LCD_WriteString(I2C_LCD, (char *)&buff);
 
     //charging temperature if it is in CHARGE state
-    if (hfsm.current_state == 2) {
+    if (hfsm.current_state == FSM_SCARRELLINO_FSM_CHARGE) {
         I2C_LCD_ACapo(I2C_LCD);
         sprintf(buff, "Charge Temp : %.0f C ", charge_temp);
         I2C_LCD_WriteString(I2C_LCD, (char *)&buff);
@@ -1128,11 +1128,11 @@ uint8_t charge_control() {
  * @brief Function thath sets all the watchdog
  */
 void can_WD_set() {
-    can_WD_init(&HVCB_HVB_RX_V_CELL_FRAME, HVCB_HVB_RX_V_CELL_CYCLE_TIME_MS);
-    can_WD_init(&HVCB_HVB_RX_T_CELL_FRAME, HVCB_HVB_RX_T_CELL_CYCLE_TIME_MS);
-    can_WD_init(&HVCB_HVB_RX_SOC_FRAME, HVCB_HVB_RX_SOC_CYCLE_TIME_MS);
-    can_WD_init(&HVCB_HVB_RX_MEASURE_FRAME, HVCB_HVB_RX_MEASURE_CYCLE_TIME_MS);
-    can_WD_init(&MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME, MCB_TLB_BAT_SD_CSENSING_STATUS_CYCLE_TIME_MS);
-    can_WD_init(&MCB_TLB_BAT_SIGNALS_STATUS_FRAME, MCB_TLB_BAT_SIGNALS_STATUS_CYCLE_TIME_MS);
-    can_WD_init(&HVCB_HVB_RX_DIAGNOSIS_FRAME,HVCB_HVB_RX_DIAGNOSIS_CYCLE_TIME_MS ); 
+    can_WD_init(&HVCB_HVB_RX_V_CELL_FRAME, HVCB_HVB_RX_V_CELL_CYCLE_TIME_MS*5);
+    can_WD_init(&HVCB_HVB_RX_T_CELL_FRAME, HVCB_HVB_RX_T_CELL_CYCLE_TIME_MS*5);
+    can_WD_init(&HVCB_HVB_RX_SOC_FRAME, HVCB_HVB_RX_SOC_CYCLE_TIME_MS*5);
+    can_WD_init(&HVCB_HVB_RX_MEASURE_FRAME, HVCB_HVB_RX_MEASURE_CYCLE_TIME_MS*5);
+    can_WD_init(&MCB_TLB_BAT_SD_CSENSING_STATUS_FRAME, MCB_TLB_BAT_SD_CSENSING_STATUS_CYCLE_TIME_MS*5);
+    can_WD_init(&MCB_TLB_BAT_SIGNALS_STATUS_FRAME, MCB_TLB_BAT_SIGNALS_STATUS_CYCLE_TIME_MS*5);
+    can_WD_init(&HVCB_HVB_RX_DIAGNOSIS_FRAME,HVCB_HVB_RX_DIAGNOSIS_CYCLE_TIME_MS*5); 
 }
