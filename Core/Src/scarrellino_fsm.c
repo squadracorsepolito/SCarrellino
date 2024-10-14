@@ -9,7 +9,6 @@
  * - Federico Carbone <federico.carbone.sc@gmail.com>
  */
 #include "scarrellino_fsm.h"
-
 #include "ECU_level_functions.h"
 #include "I2C_LCD.h"
 #include "adc.h"
@@ -31,6 +30,14 @@ extern double charging_curr;
 bool volatile AIR_CAN_Cmd = 0;
 
 extern uint8_t volatile error_code;
+bool volatile ChargeEN_risingedge = 0;
+bool volatile ChargeEN_fallingedge = 0;
+
+//flag to register the fungo pression
+bool volatile fungo_pressed = 0;
+
+
+
 
 // States global variables
 uint32_t fsm_tson_entry_time        = (-1U);
@@ -233,20 +240,23 @@ FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_IDLE_do_work(){
     // Set default state if nothing changes
     uint32_t next = FSM_SCARRELLINO_FSM_IDLE;
 
-
-    if (SDC_isactive(&variables) && (variables.ams_err_is_active == 0) && (variables.imd_err_is_active == 0) && (variables.tsal_green_is_active == 1) && 
-        HVRelays_IsAllOpen(&variables) && (variables.dcbus_is_over60_v == 0) &&
-#ifdef IMP_EN
-        (variables.imp_dcbus_is_active == 0) && (variables.imp_hv_relays_signals_is_active == 0) && (variables.imp_any_is_active == 0) &&
-#endif
-#ifdef TEMP_CHECK_EN
-        (variables.charge_temp < 60) &&
-#endif
-        ChargeEN_risingedge())
- {
+    if(fungo_pressed == 0){
+        if (SDC_isactive(&variables) && (variables.ams_err_is_active == 0) && (variables.imd_err_is_active == 0) && (variables.tsal_green_is_active == 1) && 
+            HVRelays_IsAllOpen(&variables) && (variables.dcbus_is_over60_v == 0) &&
+    #ifdef IMP_EN
+            (variables.imp_dcbus_is_active == 0) && (variables.imp_hv_relays_signals_is_active == 0) && (variables.imp_any_is_active == 0) &&
+    #endif
+    #ifdef TEMP_CHECK_EN
+            (variables.charge_temp < 60) &&
+    #endif
+            ChargeEN_risingedge == 1)
+    
+        {
 
         next = FSM_SCARRELLINO_FSM_TSON;
+        }
     }
+
 
 // check for implausibile transition
     switch (next) {
@@ -328,7 +338,7 @@ FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_TSON_do_work() {
         (variables.charge_temp < 60) &&
 #endif
         // if We are still requesting to charge
-        (ChargeEN() == CHG_EN_REQ)) {
+        (ChargeEN_risingedge == 1)) {
         // Go to CHARGE
         next = FSM_SCARRELLINO_FSM_CHARGE;
     }
@@ -337,7 +347,7 @@ FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_TSON_do_work() {
 #ifdef IMP_EN
              (variables.imp_dcbus_is_active == 1) || (variables.imp_hv_relays_signals_is_active == 1) || (variables.imp_any_is_active == 1) ||
 #endif
-             (ChargeEN() != CHG_EN_REQ)) {
+             (ChargeEN_risingedge == 0)) {
         next = FSM_SCARRELLINO_FSM_IDLE;
     }
     // If we are timing out the TS ON procedure (5sec)
@@ -425,14 +435,22 @@ FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_CHARGE_do_work() {
     uint32_t next = FSM_SCARRELLINO_FSM_CHARGE;
 
     if ((variables.ams_err_is_active == 1) || (variables.imd_err_is_active == 1) ||  // If we found AMS/IMD errors
-        !SDC_isactive(&variables) ||                                       // or the SDC opens
+        !SDC_isactive(&variables) ||                                                 // or the SDC opens
 #ifdef IMP_EN
         (variables.imp_dcbus_is_active == 1) || (variables.imp_hv_relays_signals_is_active == 1) ||
-        (variables.imp_any_is_active == 0) ||  // or implausibility
+        (variables.imp_any_is_active == 0) ||       // or implausibility
 #endif
-        HVRelays_IsAnyAirOpen(&variables) ||                             // The AIRs somehow opened
-        ChargeEN_fallingedge() || (ChargeEN() == !CHG_EN_REQ)  // or the charge is disabled via switch
+        HVRelays_IsAnyAirOpen(&variables) ||        // The AIRs somehow opened
+        (variables.charge_temp > 60)      ||        //the charging temp goes over 60°C 
+        ChargeEN_fallingedge == 1 || 
+        (ChargeEN() == !CHG_EN_REQ)                 // or the charge is disabled via switch
     ) {
+        next = FSM_SCARRELLINO_FSM_STOP_CHARGE;
+    }
+
+    //if after a second past the starting of the charge the current is minor of 0.5 Amps (stop the charge when the battery is fully charged)
+    if ((HAL_GetTick() >= (fsm_charge_entry_time + 2000U)) && (variables.charging_curr > -0.5)){
+        
         next = FSM_SCARRELLINO_FSM_STOP_CHARGE;
     }
 
@@ -502,7 +520,7 @@ FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_STOP_CHARGE_do_work() {
     uint32_t next = FSM_SCARRELLINO_FSM_STOP_CHARGE;
 
     // when no more current flows or we timeout
-    if (variables.charging_curr < 0.5 || HAL_GetTick() > fsm_stop_charge_entry_time + 500U) {
+    if (variables.charging_curr > -0.5 || HAL_GetTick() > fsm_stop_charge_entry_time + 500U) {
         next = FSM_SCARRELLINO_FSM_IDLE;
     }
 

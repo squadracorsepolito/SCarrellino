@@ -127,7 +127,9 @@ void can_rx_routine(void) {
 
         HV_BMS1_CAN_data_storage();
         HV_BMS2_CAN_data_storage();
+#ifndef SOC_evaluation
         HV_BMS3_CAN_data_storage();
+#endif
         HV_BMS4_CAN_data_storage();
         HV_BMS5_CAN_data_storage();
         TLB_Battery_signals_CAN_data_storage();

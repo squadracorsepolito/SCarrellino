@@ -13,7 +13,7 @@ void error_display();
 uint32_t MilElapsed(uint8_t reset);
 void buzzer_routine();
 void IMD_AMS_error_handler();
-void TSAC_FAN_routine();
+void TSAC_FAN_routine(double charge_temp);
 void can_tx_routine();
 void start_charge_delay();
 void end_charge_delay();
@@ -34,9 +34,6 @@ void stop_charge_routine();
 void BRUSA_CAN_data_storage();
 uint8_t charge_control();
 void can_WD_set();
-bool ChargeEN_risingedge();
-bool ChargeEN_fallingedge();
-
 
 #define buffer_TLB_signals 4u
 #define buffer_TLB_SDC 1u
@@ -46,5 +43,6 @@ bool ChargeEN_fallingedge();
 #define buffer_BMS_HV_4 5u
 #define buffer_BMS_HV_5 6u
 #define CHG_EN_REQ 0U
+#define Display_Timeout 100
 
 

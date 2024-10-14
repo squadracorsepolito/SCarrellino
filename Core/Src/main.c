@@ -38,6 +38,7 @@
 #include "ntc.h"
 #include "scarrellino_fsm.h"
 #include "string.h"
+#include "SOC_Evaluation.h"
 
 /* USER CODE END Includes */
 
@@ -48,7 +49,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define MyI2C_LCD I2C_LCD
 
 // flag for the LCD library
 uint8_t raw = 0u;
@@ -65,6 +65,9 @@ uint8_t start_can_flag = 0;
 
 //Flag to know if it is the first code run to check if the CmdEn is still on
 uint8_t first_run = 1;
+
+double extern SOC, charge_temp, v_min_rx;
+
 
 /* USER CODE END PD */
 
@@ -135,6 +138,7 @@ int main(void)
 
     I2C_LCD_Init(MyI2C_LCD);
 
+
     //HAL_TIM_Encoder_Start_IT(&htim3, TIM_CHANNEL_ALL);
 
     //timer for adc conversions
@@ -163,13 +167,19 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
     while (1) {
+      
         can_rx_routine();
         can_tx_routine();
+#ifdef SOC_evaluation
+        SOC_Evaluation(&v_min_rx, &SOC);
+#endif
+#ifdef Display
         display_routine();
+#endif
         IMD_AMS_error_handler();
         buzzer_routine();
         FSM_routine(&hfsm);
-        TSAC_FAN_routine();
+        TSAC_FAN_routine(charge_temp);
         
 
 #ifdef Watchdog

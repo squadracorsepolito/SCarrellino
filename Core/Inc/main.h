@@ -65,8 +65,10 @@ void Error_Handler(void);
 #define ENCODER_SW_GPIO_IN_GPIO_Port GPIOC
 #define CH_EN_BUTTON_GPIO_IN_Pin GPIO_PIN_0
 #define CH_EN_BUTTON_GPIO_IN_GPIO_Port GPIOA
+#define CH_EN_BUTTON_GPIO_IN_EXTI_IRQn EXTI0_IRQn
 #define SDC_FUNGO_GPIO_IN_Pin GPIO_PIN_1
 #define SDC_FUNGO_GPIO_IN_GPIO_Port GPIOA
+#define SDC_FUNGO_GPIO_IN_EXTI_IRQn EXTI1_IRQn
 #define CH_EN_CMD_GPIO_OUT_Pin GPIO_PIN_2
 #define CH_EN_CMD_GPIO_OUT_GPIO_Port GPIOA
 #define STAT2_LED_GPIO_OUT_Pin GPIO_PIN_4
@@ -107,6 +109,9 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 #define LOG_UART huart3
 
+#define MyI2C_LCD I2C_LCD
+
+
 //define to enable the test functions
 
 //#define TEST 
@@ -117,6 +122,8 @@ void Error_Handler(void);
 //#define IMP_EN
 #define TEMP_CHECK_EN
 #define air
+#define SOC_evaluation
+//#define Display
 
 #define MCB_CAN_HANDLE hcan2
 #define HVCB_CAN_HANDLE hcan1
@@ -147,13 +154,14 @@ void Error_Handler(void);
  #define ON 0
 
 
-#define _800hz 1249
-#define _1khz 999 
-#define _12khz 832
+#define _800hz 1249u
+#define _1khz 999u
+#define _12khz 832u
 #define half_power 65535/2
+#define off 65535u
 #define full_power 0
 #define TSAC_fan_on()  HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_2)
-#define TSAC_fan_off() __HAL_TIM_SET_COMPARE(&htim12, TIM_CHANNEL_2, 65535)
+#define TSAC_fan_off() __HAL_TIM_SET_COMPARE(&htim12, TIM_CHANNEL_2, off)
 #define TSAC_fan_half() __HAL_TIM_SET_COMPARE(&htim12, TIM_CHANNEL_2, half_power)
 #define TSAC_fan_max() __HAL_TIM_SET_COMPARE(&htim12, TIM_CHANNEL_2, full_power)
 #define buzzer_on()   HAL_TIMEx_PWMN_Start(&htim8 ,TIM_CHANNEL_2);

@@ -58,58 +58,57 @@ uint8_t volatile     hvb_diag_bat_vlt_sna  ,
 
 /** @brief Display pages manager function */
 void display_routine() {
-    if (ADC_conv_flag == 1) {
-        encoder_position_adjustment();
 
-        switch (position) {
-            case 0:
-                display_routine_0();
-                break;
+    static uint32_t Display_routine_entry_time = 0;
+    static uint32_t Display_routine_exit_time = 0;
 
-            case 1:
-                display_routine_1();
-                break;
-
-            case 2:
-                display_routine_2();
-                break;
-
-            default:
-                display_routine_0();
-                break;
-        }
+    //if timeout occurred in the previously run of the function disable the display
+    if (Display_routine_exit_time - Display_routine_entry_time > Display_Timeout){
+        return;
     }
-}
 
+    Display_routine_entry_time = HAL_GetTick();
 
+    //we use the adc conversion to take a frequency to refresh the display
+    if (ADC_conv_flag == 0) {
 
-bool ChargeEN_risingedge() {
+        Display_routine_exit_time = HAL_GetTick();
+        return;
+    }
 
-    bool static last_state    = 0;
-    bool static current_state = 0;
+    encoder_position_adjustment();
+
+    switch (position) {
+        case 0:
+            display_routine_0();
+            break;
+
+        case 1:
+            display_routine_1();
+            break;
+
+        case 2:
+            display_routine_2();
+            break;
+
+        default:
+            display_routine_0();
+            break;
+    }
+
+    Display_routine_exit_time = HAL_GetTick();
     
-    last_state    = 1;
-    current_state = ChargeEN();
-
-    return (last_state == !CHG_EN_REQ) && (current_state == CHG_EN_REQ);
-
-    
 }
 
-bool ChargeEN_fallingedge() {
-    static uint8_t last_state    = 0;
-    static uint8_t current_state = 0;
 
-    last_state    = 1;
-    current_state = ChargeEN();
-
-    return (last_state == CHG_EN_REQ) && (current_state == !CHG_EN_REQ);
-
-}
 
 /** @brief display page: temperature, state of charge */
 void display_routine_0() {
+    
+
     double extern charge_temp, SOC;
+    bool volatile extern fungo_pressed;
+
 
     //temperature extern
     I2C_LCD_Home(I2C_LCD);
@@ -120,21 +119,22 @@ void display_routine_0() {
     //State
     I2C_LCD_ACapo(I2C_LCD);
     switch (hfsm.current_state) {
-        case 0:
+        case FSM_SCARRELLINO_FSM_IDLE:
             strcpy(state, "IDLE");
             break;
 
-        case 1:
+        case FSM_SCARRELLINO_FSM_TSON:
             strcpy(state, "TSON");
             break;
 
-        case 2:
+        case FSM_SCARRELLINO_FSM_CHARGE:
             strcpy(state, "CHARGE");
             break;
-        case 3:
+            
+        case FSM_SCARRELLINO_FSM_STOP_CHARGE:
             strcpy(state, "STOP CHARGE");
-        case 4:
-            strcpy(state, "DONE");
+            break;
+        
     }
 
     sprintf(buff, "State : %s   ", state);
@@ -145,29 +145,36 @@ void display_routine_0() {
     sprintf(buff, "HV Batt SOC : %.1f%% ", SOC);
 
     I2C_LCD_WriteString(I2C_LCD, (char *)&buff);
+    I2C_LCD_ACapo(I2C_LCD);
 
-    //charging temperature if it is in CHARGE state
-    if (hfsm.current_state == FSM_SCARRELLINO_FSM_CHARGE) {
-        I2C_LCD_ACapo(I2C_LCD);
-        sprintf(buff, "Charge Temp : %.0f C ", charge_temp);
-        I2C_LCD_WriteString(I2C_LCD, (char *)&buff);
+    //if fungo has not been pressed
+    if(fungo_pressed == 0){
+
+        //charging temperature if it is in CHARGE state
+        if (hfsm.current_state == FSM_SCARRELLINO_FSM_CHARGE) {
+            sprintf(buff, "Charge Temp : %.0f C ", charge_temp);
+            I2C_LCD_WriteString(I2C_LCD, (char *)&buff);
+
+        }
+
+        //Error code if it isn't in CHARGE state and there is an error
+        else if (error_code != 30) {
+            sprintf(buff, "Error Code : %i    ", error_code);
+            I2C_LCD_WriteString(I2C_LCD, (char *)&buff);
+
+        }
+
+        //if it isn't neither in error neither in CHARGE state
+        else {
+            char static void_buffer[21] = "                   ";
+            I2C_LCD_WriteString(I2C_LCD, (char *)&void_buffer);
+        }
 
     }
 
-    //Error code if it isn't in CHARGE state and there is an error
-    else if (error_code != 30) {
-        I2C_LCD_ACapo(I2C_LCD);
-        sprintf(buff, "Error Code : %i    ", error_code);
+    else{
+        sprintf(buff, "Fungo Pressed, reset");
         I2C_LCD_WriteString(I2C_LCD, (char *)&buff);
-
-    }
-
-    //if it isn't neither in error neither in CHARGE state
-    else {
-        I2C_LCD_ACapo(I2C_LCD);
-
-        char static void_buffer[21] = "                   ";
-        I2C_LCD_WriteString(I2C_LCD, (char *)&void_buffer);
     }
 
     /*
@@ -417,7 +424,7 @@ void buzzer_routine(){
         
     }
 
-    if(buzzer_stop_charge_on == 1){
+    else if(buzzer_stop_charge_on == 1){
 
         if(flag == 0){
             MilElapsed(1);
@@ -565,17 +572,17 @@ void IMD_AMS_error_handler() {
 /**
  * @brief Controls the speed of the TSAC fans
  */
-void TSAC_FAN_routine() {
-    double extern charge_temp;
+void TSAC_FAN_routine(double charge_temp) {
+    
 
     if (charge_temp <= 29)
         TSAC_fan_off();
 
-    if ((charge_temp >= 31) & (charge_temp <= 39)) {
+    else if ((charge_temp >= 31) && (charge_temp <= 39)) {
         TSAC_fan_half();
     }
 
-    if (charge_temp >= 41) {
+    else if (charge_temp >= 41) {
         TSAC_fan_max();
     }
 }
@@ -732,7 +739,8 @@ void MCB_FIFO1_RX_routine() {
 void HVCB_FIFO1_RX_routine() {
     if (HAL_CAN_GetRxMessage(&HVCB_CAN_HANDLE, CAN_RX_FIFO1, &RxHeader, (uint8_t *)&RxData) != HAL_OK) {
         error_code = CAN_Rx_error;
-    } else {
+    } 
+    else {
         can_rx_flag = 1;
 
         switch (RxHeader.StdId) {
@@ -746,6 +754,8 @@ void HVCB_FIFO1_RX_routine() {
 
                 break;
 
+#ifndef SOC_evaluation
+
             case HVCB_HVB_RX_SOC_FRAME_ID:
 
                 can_buffer[buffer_BMS_HV_3].id = HVCB_HVB_RX_SOC_FRAME_ID;
@@ -753,6 +763,8 @@ void HVCB_FIFO1_RX_routine() {
                     can_buffer[buffer_BMS_HV_3].data[i] = RxData[i];
                 }
                 can_buffer[buffer_BMS_HV_3].data_present = 1;
+
+#endif
 
             case HVCB_HVB_RX_DIAGNOSIS_FRAME_ID:
 
@@ -1009,10 +1021,12 @@ void HV_BMS2_CAN_data_storage() {
     }
 }
 
+#ifndef SOC_evaluation
+
 void HV_BMS3_CAN_data_storage() {
     if (can_buffer[buffer_BMS_HV_3].data_present == 1) {
 #ifdef Watchdog
-        SW_Watchdog_Refresh(&HVCB_HVB_RX_SOC_FRAME);
+        (&HVCB_HVB_RX_SOC_FRAME);
 #endif
 
         can_buffer[buffer_BMS_HV_3].data_present = 0;
@@ -1026,6 +1040,7 @@ void HV_BMS3_CAN_data_storage() {
         //  HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
     }
 }
+#endif
 
 #ifdef BRUSA_on
 
