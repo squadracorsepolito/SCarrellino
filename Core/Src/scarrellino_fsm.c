@@ -240,7 +240,7 @@ FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_IDLE_do_work(){
     // Set default state if nothing changes
     uint32_t next = FSM_SCARRELLINO_FSM_IDLE;
 
-    if(fungo_pressed == 0){
+    
         if (SDC_isactive(&variables) && (variables.ams_err_is_active == 0) && (variables.imd_err_is_active == 0) && (variables.tsal_green_is_active == 1) && 
             HVRelays_IsAllOpen(&variables) && (variables.dcbus_is_over60_v == 0) &&
     #ifdef IMP_EN
@@ -255,7 +255,7 @@ FSM_SCARRELLINO_FSM_StateTypeDef FSM_SCARRELLINO_FSM_IDLE_do_work(){
 
         next = FSM_SCARRELLINO_FSM_TSON;
         }
-    }
+    
 
 
 // check for implausibile transition

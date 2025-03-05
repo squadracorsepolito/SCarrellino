@@ -914,27 +914,21 @@ void TLB_Battery_SDC_CAN_data_storage() {
         can_buffer[buffer_TLB_SDC].data_present = 0;
 
         mcb_tlb_bat_sd_csensing_status_init(&tlb_scd_rx);
-        mcb_tlb_bat_sd_csensing_status_unpack(
-            &tlb_scd_rx, (uint8_t *)&can_buffer[buffer_TLB_SDC].data, MCB_TLB_BAT_SD_CSENSING_STATUS_LENGTH);
+        mcb_tlb_bat_sd_csensing_status_unpack(&tlb_scd_rx, (uint8_t *)&can_buffer[buffer_TLB_SDC].data, MCB_TLB_BAT_SD_CSENSING_STATUS_LENGTH);
 
-        sdc_tsac_initial_in_is_active = mcb_tlb_bat_sd_csensing_status_sdc_tsac_initial_in_is_active_decode(
-            tlb_scd_rx.sdc_tsac_initial_in_is_active);
-        sdc_post_ams_imd_relay_is_active = mcb_tlb_bat_sd_csensing_status_sdc_post_ams_imd_relay_is_active_decode(
-            tlb_scd_rx.sdc_post_ams_imd_relay_is_active);
-        sdc_tsac_final_in_is_active =
-            mcb_tlb_bat_sd_csensing_status_sdc_tsac_final_in_is_active_decode(tlb_scd_rx.sdc_tsac_final_in_is_active);
-        sdc_prech_bypass_rly_is_closed = mcb_tlb_bat_sd_csensing_status_sdc_prech_bypass_relay_is_closed_decode(
-            tlb_scd_rx.sdc_prech_bypass_relay_is_closed);
-        sdc_final_in_voltage =
-            mcb_tlb_bat_sd_csensing_status_sdc_tsac_final_in_voltage_decode(tlb_scd_rx.sdc_tsac_final_in_voltage);
+        sdc_tsac_initial_in_is_active    = mcb_tlb_bat_sd_csensing_status_sdc_tsac_initial_in_is_active_decode(tlb_scd_rx.sdc_tsac_initial_in_is_active);
+        sdc_post_ams_imd_relay_is_active = mcb_tlb_bat_sd_csensing_status_sdc_post_ams_imd_relay_is_active_decode(tlb_scd_rx.sdc_post_ams_imd_relay_is_active);
+        sdc_tsac_final_in_is_active      = mcb_tlb_bat_sd_csensing_status_sdc_tsac_final_in_is_active_decode(tlb_scd_rx.sdc_tsac_final_in_is_active);
+        sdc_prech_bypass_rly_is_closed   = mcb_tlb_bat_sd_csensing_status_sdc_prech_bypass_relay_is_closed_decode(tlb_scd_rx.sdc_prech_bypass_relay_is_closed);
+        sdc_final_in_voltage             = mcb_tlb_bat_sd_csensing_status_sdc_tsac_final_in_voltage_decode(tlb_scd_rx.sdc_tsac_final_in_voltage);
     }
 }
 
 void TLB_Battery_signals_CAN_data_storage() {
     double extern air_neg_cmd_is_active, air_neg_is_closed, air_neg_stg_mech_state_signal_is_active,
-        air_pos_cmd_is_active, air_pos_is_closed, air_pos_stg_mech_state_signal_is_active, ams_err_is_active,
-        dcbus_is_over60_v, dcbus_prech_rly_cmd_is_active, dcbus_prech_rly_is_closed, imd_err_is_active,
-        imp_dcbus_is_active, imp_any_is_active, imp_hv_relays_signals_is_active, tsal_green_is_active;
+                  air_pos_cmd_is_active, air_pos_is_closed, air_pos_stg_mech_state_signal_is_active, ams_err_is_active,
+                  dcbus_is_over60_v, dcbus_prech_rly_cmd_is_active, dcbus_prech_rly_is_closed, imd_err_is_active,
+                  imp_dcbus_is_active, imp_any_is_active, imp_hv_relays_signals_is_active, tsal_green_is_active;
 
     if (can_buffer[buffer_TLB_signals].data_present == 1) {
 #ifdef Watchdog
@@ -946,33 +940,23 @@ void TLB_Battery_signals_CAN_data_storage() {
         struct mcb_tlb_bat_signals_status_t static tlb_signals;
 
         mcb_tlb_bat_signals_status_init(&tlb_signals);
-        mcb_tlb_bat_signals_status_unpack(
-            &tlb_signals, (uint8_t *)&can_buffer[buffer_TLB_signals].data, MCB_TLB_BAT_SIGNALS_STATUS_LENGTH);
+        mcb_tlb_bat_signals_status_unpack(&tlb_signals, (uint8_t *)&can_buffer[buffer_TLB_signals].data, MCB_TLB_BAT_SIGNALS_STATUS_LENGTH);
 
-        air_neg_cmd_is_active =
-            mcb_tlb_bat_signals_status_air_neg_cmd_is_active_decode(tlb_signals.air_neg_cmd_is_active);
-        air_neg_is_closed = mcb_tlb_bat_signals_status_air_neg_is_closed_decode(tlb_signals.air_neg_is_closed);
-        air_neg_stg_mech_state_signal_is_active =
-            mcb_tlb_bat_signals_status_air_neg_stg_mech_state_signal_is_active_decode(
-                tlb_signals.air_neg_stg_mech_state_signal_is_active);
-        air_pos_cmd_is_active =
-            mcb_tlb_bat_signals_status_air_pos_cmd_is_active_decode(tlb_signals.air_pos_cmd_is_active);
-        air_pos_is_closed = mcb_tlb_bat_signals_status_air_pos_is_closed_decode(tlb_signals.air_pos_is_closed);
-        air_pos_stg_mech_state_signal_is_active =
-            mcb_tlb_bat_signals_status_air_pos_stg_mech_state_signal_is_active_decode(
-                tlb_signals.air_pos_stg_mech_state_signal_is_active);
-        ams_err_is_active = mcb_tlb_bat_signals_status_ams_err_is_active_decode(tlb_signals.ams_err_is_active);
-        dcbus_is_over60_v = mcb_tlb_bat_signals_status_dcbus_is_over60_v_decode(tlb_signals.dcbus_is_over60_v);
-        dcbus_prech_rly_cmd_is_active =
-            mcb_tlb_bat_signals_status_dcbus_prech_rly_cmd_is_active_decode(tlb_signals.dcbus_prech_rly_cmd_is_active);
-        dcbus_prech_rly_is_closed =
-            mcb_tlb_bat_signals_status_dcbus_prech_rly_is_closed_decode(tlb_signals.dcbus_prech_rly_is_closed);
-        imd_err_is_active   = mcb_tlb_bat_signals_status_imd_err_is_active_decode(tlb_signals.imd_err_is_active);
-        imp_dcbus_is_active = mcb_tlb_bat_signals_status_imp_dcbus_is_active_decode(tlb_signals.imp_dcbus_is_active);
-        imp_any_is_active   = mcb_tlb_bat_signals_status_imp_any_is_active_decode(tlb_signals.imp_any_is_active);
-        imp_hv_relays_signals_is_active =
-            mcb_tlb_bat_signals_status_imp_hv_relays_state_is_active_decode(tlb_signals.imp_hv_relays_state_is_active);
-        tsal_green_is_active = mcb_tlb_bat_signals_status_tsal_green_is_active_decode(tlb_signals.tsal_green_is_active);
+        air_neg_cmd_is_active                   = mcb_tlb_bat_signals_status_air_neg_cmd_is_active_decode(tlb_signals.air_neg_cmd_is_active);
+        air_neg_is_closed                       = mcb_tlb_bat_signals_status_air_neg_is_closed_decode(tlb_signals.air_neg_is_closed);
+        air_neg_stg_mech_state_signal_is_active = mcb_tlb_bat_signals_status_air_neg_stg_mech_state_signal_is_active_decode(tlb_signals.air_neg_stg_mech_state_signal_is_active);
+        air_pos_cmd_is_active                   = mcb_tlb_bat_signals_status_air_pos_cmd_is_active_decode(tlb_signals.air_pos_cmd_is_active);
+        air_pos_is_closed                       = mcb_tlb_bat_signals_status_air_pos_is_closed_decode(tlb_signals.air_pos_is_closed);
+        air_pos_stg_mech_state_signal_is_active = mcb_tlb_bat_signals_status_air_pos_stg_mech_state_signal_is_active_decode(tlb_signals.air_pos_stg_mech_state_signal_is_active);
+        ams_err_is_active                       = mcb_tlb_bat_signals_status_ams_err_is_active_decode(tlb_signals.ams_err_is_active);
+        dcbus_is_over60_v                       = mcb_tlb_bat_signals_status_dcbus_is_over60_v_decode(tlb_signals.dcbus_is_over60_v);
+        dcbus_prech_rly_cmd_is_active           = mcb_tlb_bat_signals_status_dcbus_prech_rly_cmd_is_active_decode(tlb_signals.dcbus_prech_rly_cmd_is_active);
+        dcbus_prech_rly_is_closed               = mcb_tlb_bat_signals_status_dcbus_prech_rly_is_closed_decode(tlb_signals.dcbus_prech_rly_is_closed);
+        imd_err_is_active                       = mcb_tlb_bat_signals_status_imd_err_is_active_decode(tlb_signals.imd_err_is_active);
+        imp_dcbus_is_active                     = mcb_tlb_bat_signals_status_imp_dcbus_is_active_decode(tlb_signals.imp_dcbus_is_active);
+        imp_any_is_active                       = mcb_tlb_bat_signals_status_imp_any_is_active_decode(tlb_signals.imp_any_is_active);
+        imp_hv_relays_signals_is_active         = mcb_tlb_bat_signals_status_imp_hv_relays_state_is_active_decode(tlb_signals.imp_hv_relays_state_is_active);
+        tsal_green_is_active                    = mcb_tlb_bat_signals_status_tsal_green_is_active_decode(tlb_signals.tsal_green_is_active);
     }
 }
 
@@ -987,11 +971,11 @@ void HV_BMS1_CAN_data_storage() {
         hvcb_hvb_rx_v_cell_init(&v_cell_rx);
         hvcb_hvb_rx_v_cell_unpack(&v_cell_rx, (uint8_t *)&can_buffer[buffer_BMS_HV_1].data, HVCB_HVB_RX_V_CELL_LENGTH);
 
-        v_max_id_rx = hvcb_hvb_rx_v_cell_hvb_idx_cell_u_max_decode(v_cell_rx.hvb_idx_cell_u_max);
-        v_min_id_rx = hvcb_hvb_rx_v_cell_hvb_idx_cell_u_min_decode(v_cell_rx.hvb_idx_cell_u_min);
-        v_max_rx    = hvcb_hvb_rx_v_cell_hvb_u_cell_max_decode(v_cell_rx.hvb_u_cell_max);
-        v_min_rx    = hvcb_hvb_rx_v_cell_hvb_u_cell_min_decode(v_cell_rx.hvb_u_cell_min);
-        v_mean_rx   = hvcb_hvb_rx_v_cell_hvb_u_cell_mean_decode(v_cell_rx.hvb_u_cell_mean);
+        v_max_id_rx         = hvcb_hvb_rx_v_cell_hvb_idx_cell_u_max_decode(v_cell_rx.hvb_idx_cell_u_max);
+        v_min_id_rx         = hvcb_hvb_rx_v_cell_hvb_idx_cell_u_min_decode(v_cell_rx.hvb_idx_cell_u_min);
+        v_max_rx            = hvcb_hvb_rx_v_cell_hvb_u_cell_max_decode(v_cell_rx.hvb_u_cell_max);
+        v_min_rx            = hvcb_hvb_rx_v_cell_hvb_u_cell_min_decode(v_cell_rx.hvb_u_cell_min);
+        v_mean_rx           = hvcb_hvb_rx_v_cell_hvb_u_cell_mean_decode(v_cell_rx.hvb_u_cell_mean);
 
         //sprintf(buffer, "v max id = %.0f \n\rv min id = %.0f \n\rv max = %.2f \n\rv min = %.2f \n\rv mean = %.2f \n\r", v_max_id_rx, v_min_id_rx, v_max_rx, v_min_rx, v_mean_rx);
         //HAL_UART_Transmit(&LOG_UART, (uint8_t*) &buffer, strlen(buffer), 200);
@@ -1088,8 +1072,7 @@ void HV_BMS4_CAN_data_storage() {
         can_buffer[buffer_BMS_HV_4].data_present = 0;
 
         hvcb_hvb_rx_measure_init(&curr_measure);
-        hvcb_hvb_rx_measure_unpack(
-            &curr_measure, (uint8_t *)&can_buffer[buffer_BMS_HV_4].data, HVCB_HVB_RX_MEASURE_LENGTH);
+        hvcb_hvb_rx_measure_unpack(&curr_measure, (uint8_t *)&can_buffer[buffer_BMS_HV_4].data, HVCB_HVB_RX_MEASURE_LENGTH);
 
         charging_curr = hvcb_hvb_rx_measure_hvb_i_hvb_decode(curr_measure.hvb_i_hvb);
     }
